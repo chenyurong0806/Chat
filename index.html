@@ -8,12 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <!-- Supabase JS Client (用于消息与申请的实时通信和存储) -->
+  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     :root {
-      /* Google Material Design 3 Tokens */
       --md-sys-color-primary: #006a60;
       --md-sys-color-on-primary: #ffffff;
       --md-sys-color-primary-container: #74f8e5;
@@ -239,7 +238,6 @@
     }
     .stage-title { font-size: 16px; font-weight: 600; }
 
-    /* 消息视口 */
     .messages-viewport {
       flex: 1;
       overflow-y: auto;
@@ -329,7 +327,6 @@
       user-select: text;
     }
 
-    /* 通讯录：新的朋友申请面板 */
     .requests-panel {
       flex: 1;
       padding: 24px;
@@ -355,7 +352,7 @@
     .req-meta-time { font-size: 11px; color: var(--md-sys-color-outline); margin-top: 2px; }
     .req-actions { display: flex; gap: 8px; align-items: center; }
 
-    /* ================= 4. MD3 自由拖拽窗口系统 ================= */
+    /* 4. MD3 自由拖拽窗口 */
     .draggable-modal-wrapper {
       position: fixed;
       top: 0;
@@ -406,7 +403,6 @@
       gap: 14px;
     }
 
-    /* 申请添加朋友表单 */
     .apply-form-group { display: flex; flex-direction: column; gap: 4px; }
     .apply-form-label { font-size: 12px; font-weight: 500; color: var(--md-sys-color-on-surface-variant); }
     .apply-textarea {
@@ -435,7 +431,6 @@
     .radio-option { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-top: 2px; }
     .radio-option input[type="radio"] { accent-color: var(--md-sys-color-primary); width: 15px; height: 15px; }
 
-    /* 按钮样式 */
     .btn-filled {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
@@ -481,7 +476,6 @@
 <body>
 
   <div class="app-viewport">
-    <!-- 1. 左侧导航 Rail -->
     <aside class="nav-rail">
       <div class="user-avatar-btn" id="myAvatarBtn" onclick="openProfileCard()" title="个人信息">
         <img id="myAvatarImg" src="" alt="Me">
@@ -503,7 +497,6 @@
       </div>
     </aside>
 
-    <!-- 2. 会话列表 / 通讯录侧边栏 -->
     <section class="chat-sidebar">
       <div class="sidebar-header">
         <div class="search-box">
@@ -518,7 +511,6 @@
       <div class="list-scroll-area" id="listScrollContainer"></div>
     </section>
 
-    <!-- 3. 右侧主工作区 -->
     <main class="stage-container">
       <div class="stage-header">
         <div class="stage-title" id="stageTitle">聊天</div>
@@ -554,8 +546,6 @@
       </div>
     </main>
   </div>
-
-  <!-- ================= 4. 可拖拽 MD3 弹窗系统 ================= -->
 
   <!-- 弹窗 1: 搜索用户窗口 -->
   <div class="draggable-modal-wrapper" id="addFriendModalWrapper">
@@ -651,7 +641,7 @@
     </div>
   </div>
 
-  <!-- 弹窗 4: 系统设置 -->
+  <!-- 弹窗 4: 系统设置 (包含通知权限状态) -->
   <div class="draggable-modal-wrapper" id="settingsModalWrapper">
     <div class="md3-window" id="settingsWin" style="width: 340px; top: 22%; left: 35%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'settingsWin')">
@@ -661,10 +651,11 @@
       <div class="window-content">
         <div style="font-size:13px; display:flex; flex-direction:column; gap:8px;">
           <div><strong>当前用户：</strong><span id="setUname">--</span></div>
-          <div><strong>用户数据库：</strong>Cloudflare D1 (user-center)</div>
-          <div><strong>消息通道：</strong>Supabase Cloud Realtime</div>
+          <div><strong>系统通知：</strong><span id="pushStatus">检测中...</span></div>
+          <div><strong>消息通道：</strong>Supabase WebPush & Realtime</div>
         </div>
-        <div style="display:flex; justify-content:flex-end; margin-top:6px;">
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
+          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启设备推送</button>
           <button class="btn-tonal" onclick="closeModal('settingsModalWrapper')">完成</button>
         </div>
       </div>
@@ -673,11 +664,14 @@
 
   <script>
     // ====================================================
-    // 1. Supabase 客户端配置
+    // 1. Supabase 与 WebPush 配置
     // ====================================================
     const SUPABASE_URL = "https://mamubvgmcetepllznifl.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_HEeNPSqD75cWlnmZjcVHKA_Pw-OdL_A";
     const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    // 🔴 请在这里填入你第一步生成的 VAPID Public Key
+    const VAPID_PUBLIC_KEY = "BMVUuTJ0K6hICjU7Zcjv8cs6kIN1gOLcctsYntQagVeMmW1v5GoZ7IBQR0NcG1Ds99HMVOobQHbHVQ2zOksezhs";
 
     // ====================================================
     // 2. 全局状态
@@ -691,7 +685,88 @@
     let tempTargetUser = null; 
 
     // ====================================================
-    // 3. 用户初始化
+    // 3. WebPush 注册与存入 user_subscriptions 表
+    // ====================================================
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
+
+    async function initWebPush(isManual = false) {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        document.getElementById('pushStatus').innerText = '当前浏览器不支持推送';
+        return;
+      }
+
+      try {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+          if (!isManual && Notification.permission !== 'granted') {
+            document.getElementById('pushStatus').innerText = '未授权推送';
+            return;
+          }
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            document.getElementById('pushStatus').innerText = '通知权限已被拒绝';
+            return;
+          }
+
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          });
+        }
+
+        document.getElementById('pushStatus').innerText = '已启用';
+        document.getElementById('enablePushBtn').style.display = 'none';
+
+        // 存储/更新到已有的 user_subscriptions 表中 (按 endpoint 进行唯一性更新)
+        if (sbClient && currentUser.name) {
+          const subJson = subscription.toJSON();
+          const endpoint = subscription.endpoint;
+
+          const { error } = await sbClient.from('user_subscriptions').upsert({
+            user_id: currentUser.name,
+            endpoint: endpoint,
+            subscription: subJson,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'endpoint' });
+
+          if (error) console.error("保存订阅到 user_subscriptions 失败:", error);
+        }
+      } catch (err) {
+        console.error("WebPush 初始化失败:", err);
+        document.getElementById('pushStatus').innerText = '配置异常';
+      }
+    }
+
+    // 触发 Edge Function 向目标用户的所有设备发送 WebPush
+    async function triggerWebPushNotification(targetUser, title, body, url = "/") {
+      try {
+        if (!sbClient) return;
+        await sbClient.functions.invoke('push-notification', {
+          body: {
+            target_user: targetUser,
+            title: title,
+            body: body,
+            url: url
+          }
+        });
+      } catch (err) {
+        console.error("调用 Edge Function push-notification 失败:", err);
+      }
+    }
+
+    // ====================================================
+    // 4. 用户初始化
     // ====================================================
     async function initUserInfo() {
       const IS_DEV_LOGIN = false;
@@ -742,10 +817,11 @@
       loadContacts();
       await loadFriendRequests();
       initRealtimeSub();
+      initWebPush(); // 自动尝试同步订阅设备
     }
 
     // ====================================================
-    // 4. 联系人与列表管理 (支持自动去重添加)
+    // 5. 联系人管理
     // ====================================================
     function loadContacts() {
       const storageKey = `MD3_CONTACTS_${currentUser.name}`;
@@ -776,7 +852,6 @@
       localStorage.setItem(`MD3_CONTACTS_${currentUser.name}`, JSON.stringify(contacts));
     }
 
-    // 添加联系人到列表（如果已存在则不重复添加）
     function addContactIfNotExists(contact) {
       const existing = contacts.find(c => c.id === contact.id);
       if (!existing) {
@@ -870,7 +945,7 @@
     }
 
     // ====================================================
-    // 5. D1 检索与好友申请
+    // 6. 好友搜索与申请发送 (集成 WebPush 消息通知)
     // ====================================================
     async function searchUserAction() {
       const uname = document.getElementById("searchUsernameInput").value.trim();
@@ -973,6 +1048,13 @@
         if (sbClient) {
           const { error } = await sbClient.from('friend_requests').insert([reqPayload]);
           if (error) throw error;
+
+          // 🚀 触发 WebPush 通知推送到对方所有注册设备
+          triggerWebPushNotification(
+            tempTargetUser.name,
+            `好友申请: ${currentUser.name}`,
+            reqPayload.message || '请求添加你为朋友'
+          );
         }
       } catch (e) {
         console.warn("保存到 Supabase 失败", e);
@@ -999,7 +1081,6 @@
             friendRequests = data;
             saveFriendRequests();
 
-            // 同步已同意的好友到双方通讯录（解决离线/刷新后未更新的问题）
             friendRequests.forEach(req => {
               if (req.status === 'accepted') {
                 if (req.sender_id === currentUser.name) {
@@ -1098,7 +1179,6 @@
       renderFriendRequestsList();
 
       if (action === 'accepted') {
-        // 接收方将申请人添加到通讯录
         addContactIfNotExists({
           id: req.sender_id,
           name: req.remark || req.sender_name,
@@ -1115,6 +1195,12 @@
       try {
         if (sbClient) {
           await sbClient.from('friend_requests').update({ status: action }).eq('id', reqId);
+          // 通知申请人其好友申请已被处理
+          triggerWebPushNotification(
+            req.sender_id,
+            `好友申请已被${action === 'accepted' ? '通过' : '拒绝'}`,
+            `${currentUser.name} ${action === 'accepted' ? '同意了你的好友申请' : '拒绝了你的好友申请'}`
+          );
         }
       } catch (e) {
         console.warn("更新申请状态到 Supabase 失败", e);
@@ -1122,7 +1208,7 @@
     }
 
     // ====================================================
-    // 6. 云端消息收发与实时订阅 (核心修复申请方实时更新)
+    // 7. 云端消息收发与实时订阅 (实时触发设备 WebPush)
     // ====================================================
     async function loadMessagesForActiveChat() {
       const container = document.getElementById("messagesViewport");
@@ -1215,6 +1301,15 @@
       try {
         if (!sbClient) throw new Error();
         await sbClient.from('messages').insert([newMsg]);
+
+        // 🚀 发送消息时，如果不是给自己发送，触发 WebPush 到对方所有设备
+        if (activeChatId !== currentUser.name) {
+          triggerWebPushNotification(
+            activeChatId,
+            `来自 ${currentUser.name} 的消息`,
+            type === 'text' ? content : `[${type}]`
+          );
+        }
       } catch (e) {
         localStorage.setItem(`MSGS_${currentUser.name}_${activeChatId}`, JSON.stringify(currentChatMessages));
       }
@@ -1227,7 +1322,6 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           const msg = payload.new;
           if (msg.receiver_id === currentUser.name) {
-            // 自动确保发送者在联系人列表中
             addContactIfNotExists({
               id: msg.sender_id,
               name: msg.sender_id,
@@ -1247,7 +1341,6 @@
           const req = payload.new;
           if (!req) return;
 
-          // 当事件涉及当前用户时
           if (req.receiver_id === currentUser.name || req.sender_id === currentUser.name) {
             const idx = friendRequests.findIndex(r => r.id === req.id);
             if (idx >= 0) {
@@ -1257,10 +1350,8 @@
             }
             saveFriendRequests();
 
-            // ⭐ 核心修复：如果状态变更为 accepted，申请方实时将接收方加入通讯录！
             if (req.status === 'accepted') {
               if (req.sender_id === currentUser.name) {
-                // 当前用户是申请人 -> 将接收方加入通讯录
                 addContactIfNotExists({
                   id: req.receiver_id,
                   name: req.receiver_name || req.receiver_id,
@@ -1270,7 +1361,6 @@
                   timestamp: Date.now()
                 });
               } else if (req.receiver_id === currentUser.name) {
-                // 当前用户是接收人 -> 将申请人加入通讯录
                 addContactIfNotExists({
                   id: req.sender_id,
                   name: req.remark || req.sender_name || req.sender_id,
@@ -1290,7 +1380,7 @@
     }
 
     // ====================================================
-    // 7. 文件处理与常用交互
+    // 8. 文件处理与常用交互
     // ====================================================
     function handleFileUpload(e) {
       const file = e.target.files[0];
@@ -1317,7 +1407,7 @@
     }
 
     // ====================================================
-    // 8. 窗口自由拖拽与防越界机制 (Draggable System)
+    // 9. 窗口自由拖拽机制
     // ====================================================
     let dragState = { isDragging: false, currentEl: null, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 };
 
