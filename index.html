@@ -1597,7 +1597,8 @@
     const SUPABASE_URL = "https://mamubvgmcetepllznifl.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_HEeNPSqD75cWlnmZjcVHKA_Pw-OdL_A";
     const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-    const VAPID_PUBLIC_KEY = "BMVUuTJ0K6hICjU7Zcjv8cs6kIN1gOLcctsYntQagVeMmW1v5GoZ7IBQR0NcG1Ds99HMVOobQHbHVQ2zOksezhs";
+    const PUSH_SERVER_URL = 'https://webpush.chenyurong.qzz.io';
+    const VAPID_PUBLIC_KEY = "BAw4UZswhaZOftayviVlwmOjsy1g_q0Q8KL27Go1dq5OhZGX5HBJEyWuaHyLn7pxr3R87Y1GkZuz07Kng_j-16M";
 
     // 2. 全局状态
     let currentUser = { name: "", isLoggedIn: false, avatar: "" };
@@ -1728,21 +1729,25 @@
       return outputArray;
     }
 
+    // 🌟 2. 对齐任务看板：将设备订阅信息精准绑定至你的 Cloudflare Worker (PUSH_SUBS)
     async function initWebPush(isManual = false) {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        document.getElementById('pushStatus').innerText = '环境不支持推送';
+        const statusEl = document.getElementById('pushStatus');
+        if (statusEl) statusEl.innerText = '当前浏览器不支持推送';
         return;
       }
 
       if (Notification.permission === 'denied') {
-        document.getElementById('pushStatus').innerText = '通知权限被拒绝';
+        const statusEl = document.getElementById('pushStatus');
+        if (statusEl) statusEl.innerText = '通知权限已被系统拒绝';
         return;
       }
 
       if (Notification.permission === 'default' && isManual) {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-          document.getElementById('pushStatus').innerText = '未授权通知';
+          const statusEl = document.getElementById('pushStatus');
+          if (statusEl) statusEl.innerText = '未授权通知';
           return;
         }
       }
@@ -1761,13 +1766,15 @@
         }
 
         if (Notification.permission === 'granted') {
-          document.getElementById('pushStatus').innerText = '已启用 (Cloudflare 离线推送)';
-          document.getElementById('enablePushBtn').style.display = 'none';
+          const statusEl = document.getElementById('pushStatus');
+          if (statusEl) statusEl.innerText = '已启用 (离线推送就绪)';
+          const enableBtn = document.getElementById('enablePushBtn');
+          if (enableBtn) enableBtn.style.display = 'none';
         }
 
-        // 🌟 提交到 Cloudflare Worker KV 保存
-        if (subscription && currentUser.name) {
-          await fetch('/api/subscribe', {
+        // 将当前用户与此设备订阅绑定上报给 Cloudflare Worker
+        if (subscription && currentUser.name && PUSH_SERVER_URL) {
+          await fetch(`${PUSH_SERVER_URL}/api/subscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1775,28 +1782,32 @@
               subscription: subscription.toJSON()
             })
           });
-          console.log('[WebPush] 设备已成功绑定至 Cloudflare Worker');
+          console.log('[WebPush] 设备已成功同步至 Cloudflare Worker:', currentUser.name);
         }
       } catch (err) {
-        console.warn('WebPush 初始化异常:', err);
+        console.warn('[WebPush] 订阅异常:', err);
       }
     }
 
+    // 🌟 3. 发送消息时，调用 Cloudflare Worker 向接收方离线设备精准推送
     async function triggerWebPushNotification(targetUser, title, body, url = "/", icon = currentUser.avatar) {
+      if (!PUSH_SERVER_URL || !targetUser) return;
       try {
-        await fetch('/api/send-notification', {
+        const res = await fetch(`${PUSH_SERVER_URL}/api/send-notification`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             target_user: targetUser,
-            title: title,
-            body: body,
-            icon: icon,
-            url: url
+            title: title || `${currentUser.name}`,
+            body: body || '发来了一条新消息',
+            icon: icon || currentUser.avatar || '/icon.png',
+            url: url || '/'
           })
         });
+        const result = await res.json();
+        console.log('[WebPush] 推送请求结果:', result);
       } catch (err) {
-        console.warn('调用 Cloudflare 推送失败:', err);
+        console.warn('[WebPush] 调用推送失败:', err);
       }
     }
 
