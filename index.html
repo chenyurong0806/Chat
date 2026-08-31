@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <!-- Supabase JS Client -->
+  <!-- Supabase JS Client (仅用于消息与申请的实时通信和存储) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -218,7 +218,7 @@
     .list-time { font-size: 11px; opacity: 0.7; }
     .list-desc { font-size: 13px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 3. 右侧主工作区 (聊天区 / 通讯录验证管理区) */
+    /* 3. 右侧主工作区 */
     .stage-container {
       flex: 1;
       height: 100%;
@@ -239,7 +239,7 @@
     }
     .stage-title { font-size: 16px; font-weight: 600; }
 
-    /* 聊天视口 */
+    /* 消息视口 */
     .messages-viewport {
       flex: 1;
       overflow-y: auto;
@@ -329,7 +329,7 @@
       user-select: text;
     }
 
-    /* 新的朋友（好友申请管理界面） */
+    /* 通讯录：新的朋友申请管理面板 */
     .requests-panel {
       flex: 1;
       padding: 24px;
@@ -401,17 +401,9 @@
       gap: 16px;
     }
 
-    /* 仿微信好友申请表单 */
-    .apply-form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .apply-form-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--md-sys-color-on-surface-variant);
-    }
+    /* 申请添加朋友表单 */
+    .apply-form-group { display: flex; flex-direction: column; gap: 6px; }
+    .apply-form-label { font-size: 12px; font-weight: 500; color: var(--md-sys-color-on-surface-variant); }
     .apply-textarea {
       width: 100%;
       height: 80px;
@@ -433,28 +425,12 @@
       font-size: 13px;
       outline: none;
     }
-    .quick-text-btn {
-      font-size: 12px;
-      color: var(--md-sys-color-primary);
-      cursor: pointer;
-      margin-top: -2px;
-    }
+    .quick-text-btn { font-size: 12px; color: var(--md-sys-color-primary); cursor: pointer; margin-top: -2px; }
 
-    .radio-option {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-    .radio-option input[type="radio"] {
-      accent-color: var(--md-sys-color-primary);
-      width: 16px;
-      height: 16px;
-    }
+    .radio-option { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-top: 4px; }
+    .radio-option input[type="radio"] { accent-color: var(--md-sys-color-primary); width: 16px; height: 16px; }
 
-    /* 常用按钮 */
+    /* 按钮 */
     .btn-filled {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
@@ -534,12 +510,10 @@
         </button>
       </div>
 
-      <div class="list-scroll-area" id="listScrollContainer">
-        <!-- 动态渲染列表 -->
-      </div>
+      <div class="list-scroll-area" id="listScrollContainer"></div>
     </section>
 
-    <!-- 3. 右侧主舞台 (消息区 / 通讯录管理区) -->
+    <!-- 3. 右侧主工作区 -->
     <main class="stage-container">
       <div class="stage-header">
         <div class="stage-title" id="stageTitle">聊天</div>
@@ -569,18 +543,16 @@
         </div>
       </div>
 
-      <!-- 通讯录：新的朋友申请管理面板 -->
+      <!-- 通讯录面板 -->
       <div id="contactsPane" style="display:none; flex-direction:column; flex:1; height:calc(100% - 60px);">
-        <div class="requests-panel" id="requestsPanel">
-          <!-- 动态渲染好友申请验证条目 -->
-        </div>
+        <div class="requests-panel" id="requestsPanel"></div>
       </div>
     </main>
   </div>
 
   <!-- ================= 4. 可拖拽 MD3 弹窗系统 ================= -->
 
-  <!-- 弹窗 1: 搜索用户并添加窗口 -->
+  <!-- 弹窗 1: 搜索用户窗口 -->
   <div class="draggable-modal-wrapper" id="addFriendModalWrapper">
     <div class="md3-window" id="addFriendWin" style="width: 380px; top: 20%; left: 35%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'addFriendWin')">
@@ -590,7 +562,7 @@
       <div class="window-content">
         <!-- 搜索输入框与按钮排在一排 -->
         <div style="display: flex; gap: 8px;">
-          <input type="text" class="apply-input" id="searchUsernameInput" placeholder="输入用户名搜索..." style="flex:1;">
+          <input type="text" class="apply-input" id="searchUsernameInput" placeholder="输入精确用户名..." style="flex:1;">
           <button class="btn-tonal" onclick="searchUserAction()">查找</button>
         </div>
 
@@ -599,7 +571,7 @@
     </div>
   </div>
 
-  <!-- 弹窗 2: 申请添加朋友窗口 (附言、备注、权限) -->
+  <!-- 弹窗 2: 申请添加朋友窗口 -->
   <div class="draggable-modal-wrapper" id="applyModalWrapper">
     <div class="md3-window" id="applyWin" style="width: 360px; top: 15%; left: 38%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'applyWin')">
@@ -643,7 +615,7 @@
     </div>
   </div>
 
-  <!-- 弹窗 3: 个人资料卡片 (朋友圈缩略图) -->
+  <!-- 弹窗 3: 个人资料卡片 -->
   <div class="draggable-modal-wrapper" id="profileModalWrapper">
     <div class="md3-window" id="profileWin" style="width: 320px; top: 22%; left: 20%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'profileWin')">
@@ -688,8 +660,8 @@
         <div style="font-size:13px; display:flex; flex-direction:column; gap:6px;">
           <div><strong>用户名：</strong><span id="setUname">--</span></div>
           <div><strong>身份 UID：</strong><span id="setUid">--</span></div>
-          <div><strong>申请有效期：</strong>7 天自动过期防骚扰</div>
-          <div><strong>云端引擎：</strong>Supabase Cloud Realtime</div>
+          <div><strong>用户数据库：</strong>Cloudflare D1 (user-center)</div>
+          <div><strong>实时消息通道：</strong>Supabase Realtime</div>
         </div>
         <div style="display:flex; justify-content:flex-end;">
           <button class="btn-tonal" onclick="closeModal('settingsModalWrapper')">完成</button>
@@ -700,7 +672,7 @@
 
   <script>
     // ====================================================
-    // 1. Supabase 客户端配置
+    // 1. Supabase 客户端配置 (仅负责消息/申请的实时通信与存储)
     // ====================================================
     const SUPABASE_URL = "https://mamubvgmcetepllznifl.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_HEeNPSqD75cWlnmZjcVHKA_Pw-OdL_A";
@@ -710,15 +682,15 @@
     // 2. 全局状态
     // ====================================================
     let currentUser = { id: "", name: "", isLoggedIn: false, avatar: "" };
-    let currentTab = "chat"; // 'chat' | 'contacts'
+    let currentTab = "chat";
     let contacts = []; 
     let activeChatId = ""; 
     let currentChatMessages = []; 
-    let friendRequests = []; // 好友申请记录 (收+发)
-    let tempTargetUser = null; // 当前正在申请添加的目标用户
+    let friendRequests = []; 
+    let tempTargetUser = null; 
 
     // ====================================================
-    // 3. 用户初始化逻辑
+    // 3. 用户初始化
     // ====================================================
     async function initUserInfo() {
       const IS_DEV_LOGIN = false;
@@ -778,7 +750,7 @@
     }
 
     // ====================================================
-    // 4. 联系人与标签页管理
+    // 4. 联系人与列表管理
     // ====================================================
     function loadContacts() {
       const storageKey = `MD3_CONTACTS_${currentUser.id}`;
@@ -832,7 +804,6 @@
       container.innerHTML = "";
 
       if (currentTab === "contacts") {
-        // 顶部常驻“新的朋友”
         const pendingCount = friendRequests.filter(r => r.receiver_id === currentUser.id && r.status === 'pending').length;
         const newFriendItem = document.createElement("div");
         newFriendItem.className = "list-item";
@@ -894,37 +865,51 @@
     }
 
     // ====================================================
-    // 5. 好友搜索、申请窗口与 7 天有效期规则
+    // 5. 精确 D1 用户中心检索 (彻底移除虚拟假用户生成)
     // ====================================================
     async function searchUserAction() {
       const uname = document.getElementById("searchUsernameInput").value.trim();
       const resultBox = document.getElementById("searchResultDisplay");
       if (!uname) return;
 
-      resultBox.innerHTML = `<p style="font-size:12px; color:var(--md-sys-color-outline);">正在查询 D1 / 用户中心...</p>`;
+      resultBox.innerHTML = `<p style="font-size:12px; color:var(--md-sys-color-outline);">正在查询 D1 用户中心...</p>`;
 
       let found = null;
+
       try {
+        // 请求 Cloudflare D1 用户中心接口
         const res = await fetch(`/api/users/search?username=${encodeURIComponent(uname)}`);
         if (res.ok) {
           const json = await res.json();
-          if (json.user) found = json.user;
+          if (json.success && json.data) {
+            found = {
+              id: json.data.id || `user_${json.data.username}`,
+              name: json.data.username,
+              avatar: json.data.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${json.data.username}`
+            };
+          } else if (json.user) {
+            found = {
+              id: json.user.id || `user_${json.user.username}`,
+              name: json.user.username,
+              avatar: json.user.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${json.user.username}`
+            };
+          }
         }
-      } catch (e) {}
-
-      if (!found && sbClient) {
-        try {
-          const { data } = await sbClient.from('profiles').select('*').eq('username', uname).single();
-          if (data) found = data;
-        } catch (e) {}
+      } catch (e) {
+        console.warn("查询 D1 接口异常:", e);
       }
 
+      // 如果 D1 数据库中确实未检索到该用户，给出错误提示，严禁构造假数据
       if (!found) {
-        found = {
-          id: `user_${uname}`,
-          name: uname,
-          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${uname}`
-        };
+        tempTargetUser = null;
+        resultBox.innerHTML = `<p style="color:var(--md-sys-color-error); font-size:13px; margin-top:8px;">该用户不存在 (D1 数据库中未找到)</p>`;
+        return;
+      }
+
+      // 不能添加自己为好友
+      if (found.id === currentUser.id || found.name === currentUser.name) {
+        resultBox.innerHTML = `<p style="color:var(--md-sys-color-outline); font-size:13px; margin-top:8px;">不能添加自己为好友</p>`;
+        return;
       }
 
       tempTargetUser = found;
@@ -937,7 +922,7 @@
               <img src="${found.avatar}" style="width:100%; height:100%; object-fit:cover;">
             </div>
             <div>
-              <div style="font-weight:600; font-size:14px;">${found.name || found.username}</div>
+              <div style="font-weight:600; font-size:14px;">${found.name}</div>
               <div style="font-size:11px; color:var(--md-sys-color-outline);">${found.id}</div>
             </div>
           </div>
@@ -953,18 +938,17 @@
 
     function openApplyModal() {
       closeModal('addFriendModalWrapper');
-      document.getElementById("applyRemarkInput").value = tempTargetUser.name || tempTargetUser.username;
+      document.getElementById("applyRemarkInput").value = tempTargetUser.name;
       document.getElementById("applyMessageInput").value = `我是 ${currentUser.name}`;
       openModal('applyModalWrapper');
     }
 
-    // 提交好友申请（验证 7 天限制）
+    // 提交好友申请（严格 7 天限制）
     async function submitFriendRequest() {
       if (!tempTargetUser) return;
       const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
       const now = Date.now();
 
-      // 检索是否已有 7 天内待处理的申请
       const existingReq = friendRequests.find(r => 
         r.sender_id === currentUser.id && 
         r.receiver_id === tempTargetUser.id && 
@@ -984,15 +968,14 @@
         sender_name: currentUser.name,
         sender_avatar: currentUser.avatar,
         receiver_id: tempTargetUser.id,
-        receiver_name: tempTargetUser.name || tempTargetUser.username,
+        receiver_name: tempTargetUser.name,
         message: document.getElementById("applyMessageInput").value.trim(),
         remark: document.getElementById("applyRemarkInput").value.trim(),
         permission: document.querySelector('input[name="friendPermission"]:checked').value,
-        status: 'pending', // 'pending' | 'accepted' | 'rejected'
+        status: 'pending',
         created_at: new Date().toISOString()
       };
 
-      // 本地存储 + 云端同步
       friendRequests.unshift(reqPayload);
       saveFriendRequests();
 
@@ -1001,7 +984,7 @@
           await sbClient.from('friend_requests').insert([reqPayload]);
         }
       } catch (e) {
-        console.warn("写入 Supabase friend_requests 失败，使用本地隔离模式", e);
+        console.warn("保存到 Supabase 失败", e);
       }
 
       alert("好友申请已发送！");
@@ -1025,7 +1008,6 @@
       document.getElementById("contactBadgeDot").classList.toggle("show", hasPending);
     }
 
-    // 渲染好友申请列表
     function renderFriendRequestsList() {
       const container = document.getElementById("requestsPanel");
       container.innerHTML = "";
@@ -1082,7 +1064,6 @@
       renderFriendRequestsList();
 
       if (action === 'accepted') {
-        // 双向加为好友
         const newContact = {
           id: req.sender_id,
           name: req.remark || req.sender_name,
@@ -1095,12 +1076,10 @@
         saveContacts();
         renderCurrentTabList();
 
-        // 自动发送一条打招呼信息
         activeChatId = req.sender_id;
         await sendMessage("text", { content: "我通过了你的好友验证请求，现在我们可以开始聊天了。" });
       }
 
-      // 同步到 Supabase
       try {
         if (sbClient) {
           await sbClient.from('friend_requests').update({ status: action }).eq('id', reqId);
@@ -1109,7 +1088,7 @@
     }
 
     // ====================================================
-    // 6. 云端消息发送与 Realtime
+    // 6. 云端消息收发与实时订阅
     // ====================================================
     async function loadMessagesForActiveChat() {
       const container = document.getElementById("messagesViewport");
@@ -1190,7 +1169,6 @@
       renderMessages();
       if (type === 'text') textarea.value = "";
 
-      // 更新联系人列表
       const c = contacts.find(item => item.id === activeChatId);
       if (c) {
         c.lastMsg = type === 'text' ? content : `[${type}]`;
@@ -1211,7 +1189,6 @@
     function initRealtimeSub() {
       if (!sbClient) return;
 
-      // 监听消息
       sbClient.channel('realtime:chat')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           const msg = payload.new;
@@ -1222,7 +1199,6 @@
             }
           }
         })
-        // 监听好友申请
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friend_requests' }, payload => {
           const req = payload.new;
           if (req.receiver_id === currentUser.id) {
@@ -1286,7 +1262,6 @@
       let newLeft = dragState.initialLeft + (e.clientX - dragState.startX);
       let newTop = dragState.initialTop + (e.clientY - dragState.startY);
 
-      // 防越界限制
       const maxLeft = window.innerWidth - el.offsetWidth;
       const maxTop = window.innerHeight - el.offsetHeight;
 
