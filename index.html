@@ -1730,12 +1730,12 @@
 
     async function initWebPush(isManual = false) {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        document.getElementById('pushStatus').innerText = '当前环境不支持推送';
+        document.getElementById('pushStatus').innerText = '环境不支持推送';
         return;
       }
 
       if (Notification.permission === 'denied') {
-        document.getElementById('pushStatus').innerText = '通知权限已被系统拒绝';
+        document.getElementById('pushStatus').innerText = '通知权限被拒绝';
         return;
       }
 
@@ -1749,9 +1749,11 @@
 
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+
         let subscription = await registration.pushManager.getSubscription();
 
-        if (!subscription && isManual) {
+        if (!subscription && (isManual || Notification.permission === 'granted')) {
           subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -1759,36 +1761,42 @@
         }
 
         if (Notification.permission === 'granted') {
-          document.getElementById('pushStatus').innerText = '已启用 (支持离线推送)';
+          document.getElementById('pushStatus').innerText = '已启用 (Cloudflare 离线推送)';
           document.getElementById('enablePushBtn').style.display = 'none';
         }
 
-        if (subscription && sbClient && currentUser.name) {
-          const subJson = subscription.toJSON();
-          const { data: existing } = await sbClient.from('user_subscriptions').select('id').eq('user_id', currentUser.name).eq('endpoint', subscription.endpoint).maybeSingle();
-          if (existing) {
-            await sbClient.from('user_subscriptions').update({ subscription: subJson, updated_at: new Date().toISOString() }).eq('id', existing.id);
-          } else {
-            await sbClient.from('user_subscriptions').insert({ user_id: currentUser.name, subscription: subJson, updated_at: new Date().toISOString() });
-          }
+        // 🌟 提交到 Cloudflare Worker KV 保存
+        if (subscription && currentUser.name) {
+          await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: currentUser.name,
+              subscription: subscription.toJSON()
+            })
+          });
+          console.log('[WebPush] 设备已成功绑定至 Cloudflare Worker');
         }
       } catch (err) {
-        console.warn("WebPush 初始化提示:", err);
+        console.warn('WebPush 初始化异常:', err);
       }
     }
 
     async function triggerWebPushNotification(targetUser, title, body, url = "/", icon = currentUser.avatar) {
       try {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
+        await fetch('/api/send-notification', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-          body: JSON.stringify({ target_user: targetUser, title, body, icon, url })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target_user: targetUser,
+            title: title,
+            body: body,
+            icon: icon,
+            url: url
+          })
         });
-        if (!res.ok) {
-          console.warn("Edge Function 返回异常状态:", res.status);
-        }
       } catch (err) {
-        console.warn("调用 Edge Function 推送接口失败:", err);
+        console.warn('调用 Cloudflare 推送失败:', err);
       }
     }
 
