@@ -1618,11 +1618,16 @@
     let titleBlinkInterval = null;
 
     // 3. 拟真提示音引擎 (Web Audio API 合成双音节，零外部依赖，100% 播放)
+    let sharedAudioCtx = null;
     function playNotificationSound() {
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
-        const ctx = new AudioContext();
+        if (!sharedAudioCtx) sharedAudioCtx = new AudioContext();
+        if (sharedAudioCtx.state === 'suspended') {
+          sharedAudioCtx.resume();
+        }
+        const ctx = sharedAudioCtx;
         const now = ctx.currentTime;
 
         const osc1 = ctx.createOscillator();
@@ -1679,26 +1684,25 @@
       if (!("Notification" in window)) return;
       if (Notification.permission !== "granted") return;
 
+      const notificationOptions = {
+        body: body,
+        icon: icon || '/icon.png',
+        badge: '/icon.png',
+        tag: `msg_${Date.now()}_${Math.random()}`, // 唯一标识，防止多条消息被浏览器静默覆盖
+        renotify: true, // 强制每次连续消息都重新弹出提醒并震动
+        vibrate: [200, 100, 200],
+        data: { url: window.location.href }
+      };
+
       try {
-        // 优先使用 ServiceWorkerRegistration 弹出（兼容 iOS PWA 与移动端）
         if ('serviceWorker' in navigator) {
           const registration = await navigator.serviceWorker.ready;
           if (registration && registration.showNotification) {
-            await registration.showNotification(title, {
-              body: body,
-              icon: icon || '/icon.png',
-              badge: '/icon.png',
-              vibrate: [200, 100, 200],
-              data: { url: window.location.href }
-            });
+            await registration.showNotification(title, notificationOptions);
             return;
           }
         }
-        // 降级使用标准 Notification
-        new Notification(title, {
-          body: body,
-          icon: icon || '/icon.png'
-        });
+        new Notification(title, notificationOptions);
       } catch (err) {
         console.warn("弹出系统通知失败:", err);
       }
@@ -2914,6 +2918,7 @@
             const isFriend = contacts.some(c => c.id === msg.sender_id);
             if (!isFriend && msg.sender_id !== currentUser.name) return;
 
+            const isWindowFocused = document.hasFocus && document.hasFocus();
             const isCurrentlyActive = (activeChatId === msg.sender_id && document.visibilityState === 'visible');
 
             const contact = contacts.find(c => c.id === msg.sender_id);

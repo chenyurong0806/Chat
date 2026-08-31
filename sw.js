@@ -8,6 +8,8 @@ self.addEventListener('push', function(event) {
       body: data.body,
       icon: data.icon || 'https://api.dicebear.com/7.x/bottts/svg?seed=system',
       badge: data.icon || 'https://api.dicebear.com/7.x/bottts/svg?seed=system',
+      tag: `push_${Date.now()}_${Math.random()}`, // 必须加上唯一 tag
+      renotify: true,
       data: {
         url: data.url || '/'
       },
