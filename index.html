@@ -641,7 +641,7 @@
     </div>
   </div>
 
-  <!-- 弹窗 4: 系统设置 (包含通知权限状态) -->
+  <!-- 弹窗 4: 系统设置 -->
   <div class="draggable-modal-wrapper" id="settingsModalWrapper">
     <div class="md3-window" id="settingsWin" style="width: 340px; top: 22%; left: 35%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'settingsWin')">
@@ -670,8 +670,8 @@
     const SUPABASE_ANON_KEY = "sb_publishable_HEeNPSqD75cWlnmZjcVHKA_Pw-OdL_A";
     const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    // 🔴 请在这里填入你第一步生成的 VAPID Public Key
-    const VAPID_PUBLIC_KEY = "BMVUuTJ0K6hICjU7Zcjv8cs6kIN1gOLcctsYntQagVeMmW1v5GoZ7IBQR0NcG1Ds99HMVOobQHbHVQ2zOksezhs";
+    // 🔴 请填入你的 VAPID Public Key
+    const VAPID_PUBLIC_KEY = "你的_VAPID_PUBLIC_KEY";
 
     // ====================================================
     // 2. 全局状态
@@ -685,7 +685,7 @@
     let tempTargetUser = null; 
 
     // ====================================================
-    // 3. WebPush 注册与存入 user_subscriptions 表
+    // 3. WebPush 注册 (修复 428C9 自动生成列错误)
     // ====================================================
     function urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -728,19 +728,38 @@
         document.getElementById('pushStatus').innerText = '已启用';
         document.getElementById('enablePushBtn').style.display = 'none';
 
-        // 存储/更新到已有的 user_subscriptions 表中 (按 endpoint 进行唯一性更新)
+        // 🌟 修复点：endpoint 为自动生成列，严禁显式插入 endpoint 字段
         if (sbClient && currentUser.name) {
           const subJson = subscription.toJSON();
-          const endpoint = subscription.endpoint;
+          const endpointUrl = subscription.endpoint;
 
-          const { error } = await sbClient.from('user_subscriptions').upsert({
-            user_id: currentUser.name,
-            endpoint: endpoint,
-            subscription: subJson,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'endpoint' });
+          // 1. 先检索当前用户是否已登记过此 endpoint
+          const { data: existing } = await sbClient
+            .from('user_subscriptions')
+            .select('id')
+            .eq('user_id', currentUser.name)
+            .eq('endpoint', endpointUrl)
+            .maybeSingle();
 
-          if (error) console.error("保存订阅到 user_subscriptions 失败:", error);
+          if (existing) {
+            // 更新已存在的订阅对象
+            await sbClient
+              .from('user_subscriptions')
+              .update({
+                subscription: subJson,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existing.id);
+          } else {
+            // 插入新记录 (不提供 endpoint 字段，由数据库自动生成)
+            await sbClient
+              .from('user_subscriptions')
+              .insert({
+                user_id: currentUser.name,
+                subscription: subJson,
+                updated_at: new Date().toISOString()
+              });
+          }
         }
       } catch (err) {
         console.error("WebPush 初始化失败:", err);
@@ -748,7 +767,7 @@
       }
     }
 
-    // 触发 Edge Function 向目标用户的所有设备发送 WebPush
+    // 调用 Edge Function 发送推送
     async function triggerWebPushNotification(targetUser, title, body, url = "/") {
       try {
         if (!sbClient) return;
@@ -761,7 +780,7 @@
           }
         });
       } catch (err) {
-        console.error("调用 Edge Function push-notification 失败:", err);
+        console.error("调用 Edge Function 失败:", err);
       }
     }
 
@@ -817,7 +836,7 @@
       loadContacts();
       await loadFriendRequests();
       initRealtimeSub();
-      initWebPush(); // 自动尝试同步订阅设备
+      initWebPush();
     }
 
     // ====================================================
@@ -945,7 +964,7 @@
     }
 
     // ====================================================
-    // 6. 好友搜索与申请发送 (集成 WebPush 消息通知)
+    // 6. 好友搜索与申请
     // ====================================================
     async function searchUserAction() {
       const uname = document.getElementById("searchUsernameInput").value.trim();
@@ -1049,7 +1068,6 @@
           const { error } = await sbClient.from('friend_requests').insert([reqPayload]);
           if (error) throw error;
 
-          // 🚀 触发 WebPush 通知推送到对方所有注册设备
           triggerWebPushNotification(
             tempTargetUser.name,
             `好友申请: ${currentUser.name}`,
@@ -1195,7 +1213,6 @@
       try {
         if (sbClient) {
           await sbClient.from('friend_requests').update({ status: action }).eq('id', reqId);
-          // 通知申请人其好友申请已被处理
           triggerWebPushNotification(
             req.sender_id,
             `好友申请已被${action === 'accepted' ? '通过' : '拒绝'}`,
@@ -1208,7 +1225,7 @@
     }
 
     // ====================================================
-    // 7. 云端消息收发与实时订阅 (实时触发设备 WebPush)
+    // 7. 云端消息收发与实时订阅
     // ====================================================
     async function loadMessagesForActiveChat() {
       const container = document.getElementById("messagesViewport");
@@ -1302,7 +1319,6 @@
         if (!sbClient) throw new Error();
         await sbClient.from('messages').insert([newMsg]);
 
-        // 🚀 发送消息时，如果不是给自己发送，触发 WebPush 到对方所有设备
         if (activeChatId !== currentUser.name) {
           triggerWebPushNotification(
             activeChatId,
@@ -1380,7 +1396,7 @@
     }
 
     // ====================================================
-    // 8. 文件处理与常用交互
+    // 8. 文件处理与交互
     // ====================================================
     function handleFileUpload(e) {
       const file = e.target.files[0];
