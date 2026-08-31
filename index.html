@@ -13,6 +13,7 @@
 
   <style>
     :root {
+      /* Google Material Design 3 Tokens */
       --md-sys-color-primary: #006a60;
       --md-sys-color-on-primary: #ffffff;
       --md-sys-color-primary-container: #74f8e5;
@@ -33,11 +34,13 @@
       --md-sys-color-error-container: #ffdad6;
       
       --md-shape-corner-small: 8px;
-      --md-shape-corner-medium: 16px;
+      --md-shape-corner-medium: 12px;
       --md-shape-corner-large: 20px;
       --md-shape-corner-full: 9999px;
 
       --md-elevation-1: 0 1px 3px 1px rgba(0,0,0,0.12), 0 1px 2px 0 rgba(0,0,0,0.2);
+      --md-elevation-2: 0 2px 6px 2px rgba(0,0,0,0.15), 0 1px 2px 0 rgba(0,0,0,0.3);
+      --md-elevation-3: 0 4px 12px 3px rgba(0,0,0,0.15), 0 1px 3px 0 rgba(0,0,0,0.25);
       --md-elevation-floating: 0 8px 28px rgba(0,0,0,0.2), 0 3px 10px rgba(0,0,0,0.1);
     }
 
@@ -194,9 +197,14 @@
       gap: 12px;
       margin-bottom: 4px;
       transition: background 0.2s;
+      position: relative;
     }
     .list-item:hover { background: var(--md-sys-color-surface-container); }
     .list-item.active { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+    .list-item.pinned {
+      background: var(--md-sys-color-surface-container-high);
+      border-left: 3px solid var(--md-sys-color-primary);
+    }
 
     .list-avatar {
       width: 44px;
@@ -208,12 +216,24 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
     .list-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
+    .item-badge-unread {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      background: var(--md-sys-color-error);
+      border: 2px solid var(--md-sys-color-surface);
+      border-radius: 50%;
+    }
+
     .list-info { flex: 1; min-width: 0; }
     .list-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
-    .list-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
     .list-time { font-size: 11px; opacity: 0.7; }
     .list-desc { font-size: 13px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -253,6 +273,7 @@
       gap: 12px;
       max-width: 72%;
       user-select: text;
+      position: relative;
     }
     .message-row.sent {
       align-self: flex-end;
@@ -269,12 +290,22 @@
     }
     .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
+    .msg-bubble-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
     .msg-bubble {
       padding: 10px 16px;
       font-size: 14px;
       line-height: 1.5;
       word-break: break-word;
+      cursor: context-menu;
+      transition: filter 0.2s;
     }
+    .msg-bubble:hover { filter: brightness(0.97); }
+
     .message-row.sent .msg-bubble {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
@@ -284,6 +315,16 @@
       background: var(--md-sys-color-surface-container-high);
       color: var(--md-sys-color-on-surface);
       border-radius: 4px 20px 20px 20px;
+    }
+
+    .msg-recalled {
+      font-size: 12px;
+      color: var(--md-sys-color-outline);
+      background: var(--md-sys-color-surface-container);
+      padding: 4px 12px;
+      border-radius: var(--md-shape-corner-full);
+      align-self: center;
+      margin: 4px 0;
     }
 
     .file-bubble {
@@ -296,6 +337,7 @@
       border: 1px solid var(--md-sys-color-outline-variant);
       text-decoration: none;
       color: var(--md-sys-color-on-surface);
+      cursor: context-menu;
     }
     .file-bubble .material-symbols-outlined { font-size: 32px; color: var(--md-sys-color-primary); }
 
@@ -352,7 +394,52 @@
     .req-meta-time { font-size: 11px; color: var(--md-sys-color-outline); margin-top: 2px; }
     .req-actions { display: flex; gap: 8px; align-items: center; }
 
-    /* 4. MD3 自由拖拽窗口 */
+    /* ================= 4. MD3 右键上下文菜单系统 ================= */
+    .md3-context-menu {
+      position: fixed;
+      display: none;
+      z-index: 2500;
+      min-width: 150px;
+      background: var(--md-sys-color-surface);
+      border-radius: var(--md-shape-corner-medium);
+      box-shadow: var(--md-elevation-3);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      padding: 6px 0;
+      animation: menuFadeIn 0.12s ease-out;
+    }
+
+    @keyframes menuFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .context-menu-item {
+      padding: 9px 16px;
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s ease;
+    }
+    .context-menu-item:hover {
+      background: var(--md-sys-color-surface-container-high);
+    }
+    .context-menu-item.danger {
+      color: var(--md-sys-color-error);
+    }
+    .context-menu-item.danger:hover {
+      background: var(--md-sys-color-error-container);
+    }
+
+    .context-menu-divider {
+      height: 1px;
+      background: var(--md-sys-color-outline-variant);
+      margin: 4px 0;
+    }
+
+    /* 5. MD3 自由拖拽窗口 */
     .draggable-modal-wrapper {
       position: fixed;
       top: 0;
@@ -547,7 +634,62 @@
     </main>
   </div>
 
-  <!-- 弹窗 1: 搜索用户窗口 -->
+  <!-- ================= MD3 右键菜单组件 ================= -->
+
+  <!-- 1. 好友列表项右键菜单 (仿微信) -->
+  <div class="md3-context-menu" id="friendContextMenu">
+    <div class="context-menu-item" id="ctxPinBtn" onclick="togglePinContact()">置顶</div>
+    <div class="context-menu-item" id="ctxUnreadBtn" onclick="toggleUnreadContact()">标为未读</div>
+    <div class="context-menu-item" id="ctxMuteBtn" onclick="toggleMuteContact()">消息免打扰</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" onclick="openIndependentWindow()">独立窗口显示</div>
+    <div class="context-menu-item" onclick="hideContact()">不显示</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item danger" onclick="deleteContact()">删除</div>
+  </div>
+
+  <!-- 2. 消息气泡右键菜单 -->
+  <div class="md3-context-menu" id="msgContextMenu">
+    <div class="context-menu-item" onclick="copyMessageAction()">复制</div>
+    <div class="context-menu-item" onclick="forwardMessageAction()">转发</div>
+    <div class="context-menu-item" onclick="remindMessageAction()">提醒</div>
+    <div class="context-menu-item" onclick="quoteMessageAction()">引用</div>
+    <div class="context-menu-divider" id="msgRecallDivider" style="display:none;"></div>
+    <div class="context-menu-item danger" id="msgRecallBtn" style="display:none;" onclick="recallMessageAction()">撤回</div>
+  </div>
+
+  <!-- ================= 弹窗系统 ================= -->
+
+  <!-- 弹窗：转发消息选择好友窗口 -->
+  <div class="draggable-modal-wrapper" id="forwardModalWrapper">
+    <div class="md3-window" id="forwardWin" style="width: 320px; top: 20%; left: 36%;">
+      <div class="window-header-drag" onmousedown="startDrag(event, 'forwardWin')">
+        <span>转发消息给...</span>
+        <button class="icon-btn" onclick="closeModal('forwardModalWrapper')"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="window-content" style="padding: 10px 14px;">
+        <div id="forwardListContainer" style="display:flex; flex-direction:column; gap:4px; max-height:240px; overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗：独立聊天小窗口 (可拖拽) -->
+  <div class="draggable-modal-wrapper" id="popoutChatModalWrapper">
+    <div class="md3-window" id="popoutChatWin" style="width: 440px; height: 500px; top: 15%; left: 30%;">
+      <div class="window-header-drag" onmousedown="startDrag(event, 'popoutChatWin')">
+        <span id="popoutChatTitle">独立聊天</span>
+        <button class="icon-btn" onclick="closeModal('popoutChatModalWrapper')"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; height:calc(100% - 40px);">
+        <div class="messages-viewport" id="popoutMessagesViewport" style="flex:1;"></div>
+        <div class="chat-input-area" style="padding:8px 14px;">
+          <input type="text" class="apply-input" id="popoutChatInput" placeholder="输入消息 (Enter 发送)..." onkeydown="if(event.key==='Enter') sendPopoutMessage()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗：搜索用户窗口 -->
   <div class="draggable-modal-wrapper" id="addFriendModalWrapper">
     <div class="md3-window" id="addFriendWin" style="width: 360px; top: 18%; left: 34%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'addFriendWin')">
@@ -564,7 +706,7 @@
     </div>
   </div>
 
-  <!-- 弹窗 2: 申请添加朋友窗口 -->
+  <!-- 弹窗：申请添加朋友窗口 -->
   <div class="draggable-modal-wrapper" id="applyModalWrapper">
     <div class="md3-window" id="applyWin" style="width: 350px; top: 14%; left: 36%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'applyWin')">
@@ -608,7 +750,7 @@
     </div>
   </div>
 
-  <!-- 弹窗 3: 个人资料卡片 -->
+  <!-- 弹窗：个人资料卡片 -->
   <div class="draggable-modal-wrapper" id="profileModalWrapper">
     <div class="md3-window" id="profileWin" style="width: 300px; top: 20%; left: 18%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'profileWin')">
@@ -641,7 +783,7 @@
     </div>
   </div>
 
-  <!-- 弹窗 4: 系统设置 -->
+  <!-- 弹窗：系统设置 -->
   <div class="draggable-modal-wrapper" id="settingsModalWrapper">
     <div class="md3-window" id="settingsWin" style="width: 340px; top: 22%; left: 35%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'settingsWin')">
@@ -684,8 +826,12 @@
     let friendRequests = []; 
     let tempTargetUser = null; 
 
+    // 右键上下文对象
+    let contextTargetContactId = null;
+    let contextTargetMsg = null;
+
     // ====================================================
-    // 3. WebPush 注册
+    // 3. WebPush 注册与触发
     // ====================================================
     function urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -763,7 +909,6 @@
       }
     }
 
-    // 🌟 修复：显式附带 Headers 调用 Edge Function，彻底杜绝 UNAUTHORIZED 拦截
     async function triggerWebPushNotification(targetUser, title, body, url = "/") {
       try {
         const response = await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
@@ -846,7 +991,7 @@
     }
 
     // ====================================================
-    // 5. 联系人管理
+    // 5. 联系人管理与渲染 (含置顶、免打扰、未读状态)
     // ====================================================
     function loadContacts() {
       const storageKey = `MD3_CONTACTS_${currentUser.name}`;
@@ -862,13 +1007,17 @@
             avatar: currentUser.avatar,
             lastMsg: "文件传输助手",
             lastTime: "刚刚",
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            isPinned: false,
+            isMuted: false,
+            isUnread: false,
+            isHidden: false
           }
         ];
         saveContacts();
       }
 
-      activeChatId = contacts[0].id;
+      activeChatId = contacts.find(c => !c.isHidden)?.id || contacts[0]?.id || "";
       renderCurrentTabList();
       loadMessagesForActiveChat();
     }
@@ -880,7 +1029,13 @@
     function addContactIfNotExists(contact) {
       const existing = contacts.find(c => c.id === contact.id);
       if (!existing) {
-        contacts.push(contact);
+        contacts.push({
+          isPinned: false,
+          isMuted: false,
+          isUnread: false,
+          isHidden: false,
+          ...contact
+        });
         saveContacts();
         renderCurrentTabList();
       }
@@ -925,21 +1080,38 @@
         container.appendChild(newFriendItem);
       }
 
-      const list = filteredList || contacts;
-      list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      let list = filteredList || contacts.filter(c => !c.isHidden);
+      
+      // 排序：置顶优先，其次按最新时间
+      list.sort((a, b) => {
+        if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+        return (b.timestamp || 0) - (a.timestamp || 0);
+      });
 
       list.forEach(contact => {
         const item = document.createElement("div");
-        item.className = `list-item ${contact.id === activeChatId && currentTab === 'chat' ? 'active' : ''}`;
+        item.className = `list-item ${contact.id === activeChatId && currentTab === 'chat' ? 'active' : ''} ${contact.isPinned ? 'pinned' : ''}`;
         item.onclick = () => {
+          contact.isUnread = false;
+          saveContacts();
           if (currentTab === 'contacts') switchNavTab('chat');
           switchChat(contact.id);
         };
+        
+        // 绑定好友列表右键菜单
+        item.oncontextmenu = (e) => openFriendContextMenu(e, contact.id);
+
         item.innerHTML = `
-          <div class="list-avatar"><img src="${contact.avatar}" alt=""></div>
+          <div class="list-avatar">
+            <img src="${contact.avatar}" alt="">
+            ${contact.isUnread ? '<div class="item-badge-unread"></div>' : ''}
+          </div>
           <div class="list-info">
             <div class="list-top">
-              <span class="list-name">${contact.name}</span>
+              <span class="list-name">
+                ${contact.name}
+                ${contact.isMuted ? '<span class="material-symbols-outlined" style="font-size:14px; opacity:0.6;">volume_off</span>' : ''}
+              </span>
               <span class="list-time">${contact.lastTime || ''}</span>
             </div>
             <div class="list-desc">${contact.lastMsg || ''}</div>
@@ -970,7 +1142,257 @@
     }
 
     // ====================================================
-    // 6. 好友搜索与申请
+    // 6. 好友右键菜单交互逻辑
+    // ====================================================
+    function openFriendContextMenu(e, contactId) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeAllContextMenus();
+
+      contextTargetContactId = contactId;
+      const contact = contacts.find(c => c.id === contactId);
+      if (!contact) return;
+
+      // 更新菜单项文案状态
+      document.getElementById("ctxPinBtn").innerText = contact.isPinned ? "取消置顶" : "置顶";
+      document.getElementById("ctxUnreadBtn").innerText = contact.isUnread ? "标为已读" : "标为未读";
+      document.getElementById("ctxMuteBtn").innerText = contact.isMuted ? "允许消息提醒" : "消息免打扰";
+
+      const menu = document.getElementById("friendContextMenu");
+      positionMenu(e, menu);
+    }
+
+    function togglePinContact() {
+      const contact = contacts.find(c => c.id === contextTargetContactId);
+      if (contact) {
+        contact.isPinned = !contact.isPinned;
+        saveContacts();
+        renderCurrentTabList();
+      }
+      closeAllContextMenus();
+    }
+
+    function toggleUnreadContact() {
+      const contact = contacts.find(c => c.id === contextTargetContactId);
+      if (contact) {
+        contact.isUnread = !contact.isUnread;
+        saveContacts();
+        renderCurrentTabList();
+      }
+      closeAllContextMenus();
+    }
+
+    function toggleMuteContact() {
+      const contact = contacts.find(c => c.id === contextTargetContactId);
+      if (contact) {
+        contact.isMuted = !contact.isMuted;
+        saveContacts();
+        renderCurrentTabList();
+      }
+      closeAllContextMenus();
+    }
+
+    function hideContact() {
+      const contact = contacts.find(c => c.id === contextTargetContactId);
+      if (contact) {
+        contact.isHidden = true;
+        saveContacts();
+        renderCurrentTabList();
+      }
+      closeAllContextMenus();
+    }
+
+    function deleteContact() {
+      if (contextTargetContactId === currentUser.name) {
+        alert("不能删除文件传输助手 (自己)");
+        closeAllContextMenus();
+        return;
+      }
+      if (confirm(`确定要删除好友「${contextTargetContactId}」及相关会话吗？`)) {
+        contacts = contacts.filter(c => c.id !== contextTargetContactId);
+        saveContacts();
+        if (activeChatId === contextTargetContactId) {
+          activeChatId = contacts[0]?.id || "";
+        }
+        renderCurrentTabList();
+        loadMessagesForActiveChat();
+      }
+      closeAllContextMenus();
+    }
+
+    // 独立窗口显示小聊天窗
+    function openIndependentWindow() {
+      closeAllContextMenus();
+      const contact = contacts.find(c => c.id === contextTargetContactId);
+      if (!contact) return;
+
+      document.getElementById("popoutChatTitle").innerText = `与 ${contact.name} 独立聊天`;
+      openModal("popoutChatModalWrapper");
+      renderPopoutMessages();
+    }
+
+    function renderPopoutMessages() {
+      const viewport = document.getElementById("popoutMessagesViewport");
+      viewport.innerHTML = "";
+      currentChatMessages.forEach(msg => {
+        const isMe = msg.sender_id === currentUser.name;
+        const row = document.createElement("div");
+        row.className = `message-row ${isMe ? 'sent' : 'received'}`;
+        row.innerHTML = `<div class="msg-bubble">${msg.content}</div>`;
+        viewport.appendChild(row);
+      });
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+
+    async function sendPopoutMessage() {
+      const input = document.getElementById("popoutChatInput");
+      const txt = input.value.trim();
+      if (!txt) return;
+      input.value = "";
+      await sendMessage("text", { content: txt });
+      renderPopoutMessages();
+    }
+
+    // ====================================================
+    // 7. 消息右键菜单交互逻辑 (复制、转发、提醒、引用、撤回)
+    // ====================================================
+    function openMessageContextMenu(e, msg) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeAllContextMenus();
+
+      contextTargetMsg = msg;
+
+      // 仅自己发送的消息显示撤回
+      const isMe = msg.sender_id === currentUser.name;
+      document.getElementById("msgRecallBtn").style.display = isMe ? "flex" : "none";
+      document.getElementById("msgRecallDivider").style.display = isMe ? "block" : "none";
+
+      const menu = document.getElementById("msgContextMenu");
+      positionMenu(e, menu);
+    }
+
+    // 1. 复制
+    function copyMessageAction() {
+      if (!contextTargetMsg) return;
+      const textToCopy = contextTargetMsg.msg_type === 'text' 
+        ? contextTargetMsg.content 
+        : (contextTargetMsg.file_url || contextTargetMsg.file_name || "");
+      
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        alert("消息已复制到剪贴板");
+      }).catch(() => {
+        alert("复制失败，请手动选择复制");
+      });
+      closeAllContextMenus();
+    }
+
+    // 2. 转发
+    function forwardMessageAction() {
+      if (!contextTargetMsg) return;
+      closeAllContextMenus();
+
+      const forwardContainer = document.getElementById("forwardListContainer");
+      forwardContainer.innerHTML = "";
+
+      contacts.forEach(contact => {
+        const item = document.createElement("div");
+        item.style.cssText = "display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; transition:background 0.2s;";
+        item.onmouseover = () => item.style.background = "var(--md-sys-color-surface-container-high)";
+        item.onmouseout = () => item.style.background = "transparent";
+        item.onclick = async () => {
+          closeModal("forwardModalWrapper");
+          await sendMessage(contextTargetMsg.msg_type, {
+            content: contextTargetMsg.content,
+            file_url: contextTargetMsg.file_url,
+            file_name: contextTargetMsg.file_name,
+            file_size: contextTargetMsg.file_size
+          });
+          alert(`已转发给 ${contact.name}`);
+        };
+
+        item.innerHTML = `
+          <img src="${contact.avatar}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+          <span style="font-size:13px; font-weight:500;">${contact.name}</span>
+        `;
+        forwardContainer.appendChild(item);
+      });
+
+      openModal("forwardModalWrapper");
+    }
+
+    // 3. 提醒
+    function remindMessageAction() {
+      if (!contextTargetMsg) return;
+      closeAllContextMenus();
+      alert(`已为该条消息设置提醒:「${contextTargetMsg.content.substring(0, 20)}...」`);
+    }
+
+    // 4. 引用
+    function quoteMessageAction() {
+      if (!contextTargetMsg) return;
+      closeAllContextMenus();
+
+      const input = document.getElementById("chatInput");
+      const quoteText = `「${contextTargetMsg.sender_id}: ${contextTargetMsg.content}」\n- - - -\n`;
+      input.value = quoteText + input.value;
+      input.focus();
+    }
+
+    // 5. 撤回
+    async function recallMessageAction() {
+      if (!contextTargetMsg) return;
+      closeAllContextMenus();
+
+      if (contextTargetMsg.sender_id !== currentUser.name) {
+        alert("只能撤回自己发送的消息");
+        return;
+      }
+
+      const idx = currentChatMessages.findIndex(m => m.id === contextTargetMsg.id || (m.content === contextTargetMsg.content && m.created_at === contextTargetMsg.created_at));
+      if (idx !== -1) {
+        currentChatMessages[idx].is_recalled = true;
+        currentChatMessages[idx].content = "[你撤回了一条消息]";
+      }
+
+      renderMessages();
+
+      // 更新云端数据
+      try {
+        if (sbClient && contextTargetMsg.id) {
+          await sbClient.from('messages').update({ content: '[消息已被撤回]', is_recalled: true }).eq('id', contextTargetMsg.id);
+        }
+      } catch (e) {
+        console.warn("撤回云端同步失败", e);
+      }
+    }
+
+    // 通用菜单定位器 (支持边缘防越界)
+    function positionMenu(e, menuEl) {
+      menuEl.style.display = "block";
+      const menuWidth = menuEl.offsetWidth || 150;
+      const menuHeight = menuEl.offsetHeight || 180;
+      
+      let left = e.clientX;
+      let top = e.clientY;
+
+      if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 10;
+      if (top + menuHeight > window.innerHeight) top = window.innerHeight - menuHeight - 10;
+
+      menuEl.style.left = `${left}px`;
+      menuEl.style.top = `${top}px`;
+    }
+
+    function closeAllContextMenus() {
+      document.getElementById("friendContextMenu").style.display = "none";
+      document.getElementById("msgContextMenu").style.display = "none";
+    }
+
+    // 全局点击自动关闭右键菜单
+    document.addEventListener("click", closeAllContextMenus);
+
+    // ====================================================
+    // 8. 搜索与添加好友
     // ====================================================
     async function searchUserAction() {
       const uname = document.getElementById("searchUsernameInput").value.trim();
@@ -1074,7 +1496,6 @@
           const { error } = await sbClient.from('friend_requests').insert([reqPayload]);
           if (error) throw error;
 
-          // 触发系统推送
           triggerWebPushNotification(
             tempTargetUser.name,
             `好友申请: ${currentUser.name}`,
@@ -1232,7 +1653,7 @@
     }
 
     // ====================================================
-    // 7. 云端消息收发与实时订阅
+    // 9. 云端消息收发与实时订阅
     // ====================================================
     async function loadMessagesForActiveChat() {
       const container = document.getElementById("messagesViewport");
@@ -1265,6 +1686,14 @@
       }
 
       currentChatMessages.forEach(msg => {
+        if (msg.is_recalled) {
+          const recallRow = document.createElement("div");
+          recallRow.className = "msg-recalled";
+          recallRow.innerText = msg.sender_id === currentUser.name ? "你撤回了一条消息" : `${msg.sender_id} 撤回了一条消息`;
+          container.appendChild(recallRow);
+          return;
+        }
+
         const isMe = msg.sender_id === currentUser.name;
         const row = document.createElement("div");
         row.className = `message-row ${isMe ? 'sent' : 'received'}`;
@@ -1286,7 +1715,15 @@
         }
 
         const avatar = isMe ? currentUser.avatar : (contacts.find(c=>c.id === msg.sender_id)?.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + msg.sender_id);
-        row.innerHTML = `<div class="msg-avatar"><img src="${avatar}"></div>${contentHtml}`;
+        
+        row.innerHTML = `
+          <div class="msg-avatar"><img src="${avatar}"></div>
+          <div class="msg-bubble-wrap">${contentHtml}</div>
+        `;
+
+        // 绑定消息气泡右键菜单
+        row.oncontextmenu = (e) => openMessageContextMenu(e, msg);
+
         container.appendChild(row);
       });
 
@@ -1329,7 +1766,7 @@
         if (activeChatId !== currentUser.name) {
           triggerWebPushNotification(
             activeChatId,
-            `来自 ${currentUser.name} 的消息`,
+            `${currentUser.name} 发来一条消息`,
             type === 'text' ? content : `[${type}]`
           );
         }
@@ -1358,6 +1795,14 @@
               currentChatMessages.push(msg);
               renderMessages();
             }
+          }
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+          const updatedMsg = payload.new;
+          const idx = currentChatMessages.findIndex(m => m.id === updatedMsg.id);
+          if (idx !== -1) {
+            currentChatMessages[idx] = updatedMsg;
+            renderMessages();
           }
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, payload => {
@@ -1403,7 +1848,7 @@
     }
 
     // ====================================================
-    // 8. 文件处理与常用交互
+    // 10. 文件处理与常用交互
     // ====================================================
     function handleFileUpload(e) {
       const file = e.target.files[0];
@@ -1430,7 +1875,7 @@
     }
 
     // ====================================================
-    // 9. 窗口自由拖拽机制
+    // 11. 窗口自由拖拽机制
     // ====================================================
     let dragState = { isDragging: false, currentEl: null, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 };
 
