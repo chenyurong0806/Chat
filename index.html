@@ -874,7 +874,7 @@
       height: 40px;
     }
 
-    /* 6. MD3 按钮体系 (严格对齐规范) */
+    /* 6. MD3 按钮体系 */
     .btn-filled {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
@@ -967,7 +967,7 @@
       text-decoration: underline;
     }
 
-    /* 7. 查找聊天记录组件体系 (仿微信全功能) */
+    /* 7. 查找聊天记录组件体系 */
     .history-tabs-container {
       display: flex;
       align-items: center;
@@ -1043,7 +1043,6 @@
       gap: 12px;
     }
 
-    /* 历史记录各项样式 */
     .history-msg-item {
       display: flex;
       gap: 10px;
@@ -1423,7 +1422,7 @@
     </div>
   </div>
 
-  <!-- 弹窗/页面：与“XXX”的聊天记录 (Search History & Filter Tabs) -->
+  <!-- 弹窗/页面：与“XXX”的聊天记录 -->
   <div class="draggable-modal-wrapper mobile-fullscreen" id="searchHistoryModalWrapper">
     <div class="md3-window" id="searchHistoryWin"
       style="width: 500px; height: 600px; top: 8%; left: 28%; display:flex; flex-direction:column;">
@@ -1433,7 +1432,6 @@
             class="material-symbols-outlined">close</span></button>
       </div>
 
-      <!-- 搜索栏 -->
       <div class="history-search-bar">
         <span id="historyFilterChip" class="filter-chip" style="display:none;">
           <span class="material-symbols-outlined" id="historyFilterIcon" style="font-size:14px;">folder</span>
@@ -1445,7 +1443,6 @@
           oninput="renderHistoryView()">
       </div>
 
-      <!-- 分类标签页 -->
       <div class="history-tabs-container">
         <button class="history-tab-btn active" onclick="switchHistoryTab('all')">全部</button>
         <button class="history-tab-btn" onclick="switchHistoryTab('file')">文件</button>
@@ -1454,7 +1451,6 @@
         <button class="history-tab-btn" onclick="switchHistoryTab('date')">日期</button>
       </div>
 
-      <!-- 内容展示列表 -->
       <div class="history-results-viewport" id="historyResultsContainer"></div>
     </div>
   </div>
@@ -1574,7 +1570,7 @@
 
   <!-- 弹窗：系统设置 -->
   <div class="draggable-modal-wrapper" id="settingsModalWrapper">
-    <div class="md3-window" id="settingsWin" style="width: 340px; top: 22%; left: 35%;">
+    <div class="md3-window" id="settingsWin" style="width: 360px; top: 20%; left: 35%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'settingsWin')">
         <span>个人中心与设置</span>
         <button class="icon-btn" onclick="closeModal('settingsModalWrapper')"><span
@@ -1584,11 +1580,13 @@
         <div style="font-size:13px; display:flex; flex-direction:column; gap:10px;">
           <div><strong>当前登录：</strong><span id="setUname">--</span></div>
           <div><strong>系统通知状态：</strong><span id="pushStatus">检测中...</span></div>
-          <div><strong>技术架构：</strong>Cloudflare D1 + Supabase Realtime</div>
+          <div><strong>通知引擎：</strong>Local SW Notification + WebPush</div>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
-          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启消息推送</button>
-          <button class="btn-tonal" onclick="closeModal('settingsModalWrapper')">完成</button>
+          <button class="btn-tonal" onclick="testNotificationAction()"><span class="material-symbols-outlined"
+              style="font-size:16px;">notifications_active</span>测试发送通知</button>
+          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启通知权限</button>
+          <button class="btn-text" onclick="closeModal('settingsModalWrapper')">完成</button>
         </div>
       </div>
     </div>
@@ -1614,11 +1612,107 @@
     let contextTargetMsg = null;
     let currentQuoteData = null;
 
-    // 查找记录状态
     let historyActiveTab = "all";
-    let historyFilter = null; // null | 'file' | 'image' | 'link'
+    let historyFilter = null;
+    let originalTitle = document.title;
+    let titleBlinkInterval = null;
 
-    // 3. WebPush
+    // 3. 拟真提示音引擎 (Web Audio API 合成双音节，零外部依赖，100% 播放)
+    function playNotificationSound() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(800, now);
+        osc1.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+        gain1.gain.setValueAtTime(0.3, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.08);
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1400, now + 0.1);
+        gain2.gain.setValueAtTime(0.25, now + 0.1);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.1);
+        osc2.stop(now + 0.22);
+      } catch (e) { }
+    }
+
+    // 4. 网页标题后台闪烁提醒
+    function startTitleBlink(senderName) {
+      if (document.visibilityState === 'visible') return;
+      if (titleBlinkInterval) clearInterval(titleBlinkInterval);
+      let flag = false;
+      titleBlinkInterval = setInterval(() => {
+        document.title = flag ? `【新消息】${senderName}` : `【　　　】${senderName}`;
+        flag = !flag;
+      }, 800);
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === 'visible') {
+        if (titleBlinkInterval) {
+          clearInterval(titleBlinkInterval);
+          titleBlinkInterval = null;
+          document.title = originalTitle;
+        }
+      }
+    });
+
+    // 5. 🌟 核心：全平台系统级本地与远程通知派发引擎
+    async function triggerSystemNotification(title, body, icon = currentUser.avatar) {
+      playNotificationSound();
+      startTitleBlink(title);
+
+      if (!("Notification" in window)) return;
+      if (Notification.permission !== "granted") return;
+
+      try {
+        // 优先使用 ServiceWorkerRegistration 弹出（兼容 iOS PWA 与移动端）
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.ready;
+          if (registration && registration.showNotification) {
+            await registration.showNotification(title, {
+              body: body,
+              icon: icon || '/icon.png',
+              badge: '/icon.png',
+              vibrate: [200, 100, 200],
+              data: { url: window.location.href }
+            });
+            return;
+          }
+        }
+        // 降级使用标准 Notification
+        new Notification(title, {
+          body: body,
+          icon: icon || '/icon.png'
+        });
+      } catch (err) {
+        console.warn("弹出系统通知失败:", err);
+      }
+    }
+
+    // 测试通知按钮
+    async function testNotificationAction() {
+      if (Notification.permission !== 'granted') {
+        await initWebPush(true);
+      }
+      await triggerSystemNotification("系统通知测试", "这是一条即时消息提醒测试，您的通知通道已就绪！", currentUser.avatar);
+    }
+
+    // 6. WebPush 注册与状态检测
     function urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
       const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
@@ -1632,31 +1726,40 @@
 
     async function initWebPush(isManual = false) {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        document.getElementById('pushStatus').innerText = '环境不支持推送';
+        document.getElementById('pushStatus').innerText = '当前环境不支持推送';
         return;
       }
+
+      if (Notification.permission === 'denied') {
+        document.getElementById('pushStatus').innerText = '通知权限已被系统拒绝';
+        return;
+      }
+
+      if (Notification.permission === 'default' && isManual) {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          document.getElementById('pushStatus').innerText = '未授权通知';
+          return;
+        }
+      }
+
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
         let subscription = await registration.pushManager.getSubscription();
-        if (!subscription) {
-          if (!isManual && Notification.permission !== 'granted') {
-            document.getElementById('pushStatus').innerText = '未授权推送';
-            return;
-          }
-          const permission = await Notification.requestPermission();
-          if (permission !== 'granted') {
-            document.getElementById('pushStatus').innerText = '通知权限未开启';
-            return;
-          }
+
+        if (!subscription && isManual) {
           subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
         }
-        document.getElementById('pushStatus').innerText = '已开启';
-        document.getElementById('enablePushBtn').style.display = 'none';
 
-        if (sbClient && currentUser.name) {
+        if (Notification.permission === 'granted') {
+          document.getElementById('pushStatus').innerText = '已启用 (支持离线推送)';
+          document.getElementById('enablePushBtn').style.display = 'none';
+        }
+
+        if (subscription && sbClient && currentUser.name) {
           const subJson = subscription.toJSON();
           const { data: existing } = await sbClient.from('user_subscriptions').select('id').eq('user_id', currentUser.name).eq('endpoint', subscription.endpoint).maybeSingle();
           if (existing) {
@@ -1666,21 +1769,26 @@
           }
         }
       } catch (err) {
-        document.getElementById('pushStatus').innerText = '配置正常';
+        console.warn("WebPush 初始化提示:", err);
       }
     }
 
     async function triggerWebPushNotification(targetUser, title, body, url = "/", icon = currentUser.avatar) {
       try {
-        await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
           body: JSON.stringify({ target_user: targetUser, title, body, icon, url })
         });
-      } catch (err) { }
+        if (!res.ok) {
+          console.warn("Edge Function 返回异常状态:", res.status);
+        }
+      } catch (err) {
+        console.warn("调用 Edge Function 推送接口失败:", err);
+      }
     }
 
-    // 4. 用户初始化
+    // 7. 用户初始化
     async function initUserInfo() {
       try {
         const res = await fetch("/api/userinfo");
@@ -1731,7 +1839,7 @@
       return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username || 'user')}`;
     }
 
-    // 5. 联系人列表管理
+    // 8. 联系人列表管理
     function loadContacts() {
       const storageKey = `MD3_CONTACTS_${currentUser.name}`;
       const saved = localStorage.getItem(storageKey);
@@ -1900,7 +2008,7 @@
       document.getElementById("stageContainer").classList.remove("mobile-active");
     }
 
-    // 6. 聊天详情与设置
+    // 9. 聊天详情与设置
     function openChatDetailModal() {
       const contact = contacts.find(c => c.id === activeChatId);
       if (!contact) return;
@@ -1931,7 +2039,6 @@
       renderCurrentTabList();
     }
 
-    // 🌟 修复：清空聊天记录只影响自己（本地持久化记录清空时间截点，不物理删除对方数据库记录）
     async function clearCurrentChatHistory() {
       if (!confirm(`确定要清空与「${activeChatId}」的聊天记录吗？此操作仅清除你的本地查看记录，不会影响对方。`)) return;
 
@@ -1959,7 +2066,7 @@
       closeModal("chatDetailModalWrapper");
     }
 
-    // 7. 查找聊天记录功能 (全功能仿微信)
+    // 10. 查找聊天记录功能
     function openSearchHistoryModal() {
       const contact = contacts.find(c => c.id === activeChatId);
       document.getElementById("historyWinTitle").innerText = `与“${contact?.name || activeChatId}”的聊天记录`;
@@ -2038,7 +2145,6 @@
 
       let filtered = currentChatMessages.filter(m => !m.is_recalled);
 
-      // 按类型过滤
       if (historyFilter === 'file') {
         filtered = filtered.filter(m => m.msg_type === 'file');
       } else if (historyFilter === 'image') {
@@ -2047,7 +2153,6 @@
         filtered = filtered.filter(m => m.msg_type === 'text' && /(https?:\/\/[^\s]+)/g.test(m.content));
       }
 
-      // 按关键词检索
       if (keyword) {
         filtered = filtered.filter(m => {
           if (m.msg_type === 'text') return m.content.toLowerCase().includes(keyword);
@@ -2061,13 +2166,11 @@
         return;
       }
 
-      // 图片视图按月份分组
       if (historyActiveTab === 'image' || (historyFilter === 'image' && !keyword)) {
         renderImageGridView(container, filtered);
         return;
       }
 
-      // 常规混合/文件/链接列表展示
       filtered.forEach(msg => {
         const item = document.createElement("div");
         item.className = "history-msg-item";
@@ -2142,7 +2245,6 @@
       }
     }
 
-    // 定位到聊天主窗口消息位置并高亮闪烁
     function locateMessageInChat(msgIdentifier) {
       closeModal('searchHistoryModalWrapper');
       closeModal('chatDetailModalWrapper');
@@ -2158,13 +2260,13 @@
         if (targetEl) {
           targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
           targetEl.classList.remove("highlighted");
-          void targetEl.offsetWidth; // 触发重绘
+          void targetEl.offsetWidth;
           targetEl.classList.add("highlighted");
         }
       }, 200);
     }
 
-    // 8. 好友右键菜单 & 双向解除
+    // 11. 好友右键菜单 & 双向解除
     function openFriendContextMenu(e, contactId) {
       if (window.innerWidth <= 768) return;
       e.preventDefault();
@@ -2291,7 +2393,7 @@
       renderPopoutMessages();
     }
 
-    // 9. 消息右键 & 引用撤回
+    // 12. 消息右键 & 引用撤回
     function openMessageContextMenu(e, msg) {
       if (window.innerWidth <= 768) return;
       e.preventDefault();
@@ -2416,7 +2518,7 @@
     }
     document.addEventListener("click", closeAllContextMenus);
 
-    // 10. 好友申请 & 搜索
+    // 13. 好友申请 & 搜索
     async function searchUserAction() {
       const uname = document.getElementById("searchUsernameInput").value.trim();
       const resultBox = document.getElementById("searchResultDisplay");
@@ -2663,7 +2765,7 @@
       } catch (e) { }
     }
 
-    // 11. 消息收发与实时订阅
+    // 14. 消息收发与实时订阅 (集成系统通知)
     async function loadMessagesForActiveChat() {
       const container = document.getElementById("messagesViewport");
       container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:12px;">加载中...</div>`;
@@ -2679,7 +2781,6 @@
         if (error) throw error;
         let msgs = data || [];
 
-        // 🌟 仅加载当前用户清空截点之后的消息
         const clearKey = `CLEAR_TS_${currentUser.name}_${activeChatId}`;
         const clearTs = parseInt(localStorage.getItem(clearKey) || "0", 10);
         if (clearTs > 0) {
@@ -2795,7 +2896,7 @@
         if (!sbClient) throw new Error();
         await sbClient.from('messages').insert([newMsg]);
 
-        if (activeChatId !== currentUser.name && !c?.isMuted) {
+        if (activeChatId !== currentUser.name) {
           triggerWebPushNotification(activeChatId, `${currentUser.name}`, type === 'text' ? content : `[${type}]`, '/', currentUser.avatar);
         }
       } catch (e) {
@@ -2823,6 +2924,12 @@
               contact.isUnread = !isCurrentlyActive;
               saveContacts();
               renderCurrentTabList();
+
+              // 🌟 收到消息，且未免打扰、且用户未在当前激活窗口时：立即触发系统通知和声音
+              if (!contact.isMuted && !isCurrentlyActive) {
+                const noticeBody = msg.msg_type === 'text' ? msg.content : `[${msg.msg_type}]`;
+                triggerSystemNotification(contact.name || msg.sender_id, noticeBody, contact.avatar);
+              }
             }
 
             if (msg.sender_id === activeChatId) {
@@ -2895,7 +3002,7 @@
         .subscribe();
     }
 
-    // 12. 文件处理
+    // 15. 文件处理
     function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -2920,7 +3027,7 @@
       input.focus();
     }
 
-    // 13. 窗口自由拖拽
+    // 16. 窗口自由拖拽
     let dragState = { isDragging: false, currentEl: null, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 };
 
     function startDrag(e, elementId) {
