@@ -1718,8 +1718,8 @@
 
     // 6. WebPush 注册与状态检测
     function urlBase64ToUint8Array(base64String) {
-      const padding = '='.repeat((4 - base64String.length % 4) % 4);
-      const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
       const rawData = window.atob(base64);
       const outputArray = new Uint8Array(rawData.length);
       for (let i = 0; i < rawData.length; ++i) {
@@ -1729,64 +1729,86 @@
     }
 
     async function initWebPush(isManual = false) {
+      const statusEl = document.getElementById('pushStatus');
+      const btnEl = document.getElementById('enablePushBtn');
+
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        document.getElementById('pushStatus').innerText = '当前环境不支持推送';
+        if (statusEl) statusEl.innerText = '当前浏览器不支持推送';
         return;
       }
 
-      if (Notification.permission === 'denied') {
-        document.getElementById('pushStatus').innerText = '通知权限已被系统拒绝';
+      // 1. 先行注册 Service Worker
+      let registration;
+      try {
+        registration = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+      } catch (e) {
+        console.warn("Service Worker 注册失败:", e);
+        if (statusEl) statusEl.innerText = 'SW 注册失败';
         return;
       }
 
-      if (Notification.permission === 'default' && isManual) {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          document.getElementById('pushStatus').innerText = '未授权通知';
+      // 2. 如果是手动点击，先立即申请权限（iOS 同步要求）
+      if (isManual && Notification.permission !== 'granted') {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          if (statusEl) statusEl.innerText = '用户已拒绝通知权限';
           return;
         }
       }
 
-      try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
-        let subscription = await registration.pushManager.getSubscription();
+      // 3. 检查当前权限
+      if (Notification.permission === 'granted') {
+        if (statusEl) statusEl.innerText = '已开启 (支持离线推送)';
+        if (btnEl) btnEl.style.display = 'none';
 
-        if (!subscription && isManual) {
-          subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-          });
-        }
-
-        if (Notification.permission === 'granted') {
-          document.getElementById('pushStatus').innerText = '已启用 (支持离线推送)';
-          document.getElementById('enablePushBtn').style.display = 'none';
-        }
-
-        if (subscription && sbClient && currentUser.name) {
-          const subJson = subscription.toJSON();
-          const { data: existing } = await sbClient.from('user_subscriptions').select('id').eq('user_id', currentUser.name).eq('endpoint', subscription.endpoint).maybeSingle();
-          if (existing) {
-            await sbClient.from('user_subscriptions').update({ subscription: subJson, updated_at: new Date().toISOString() }).eq('id', existing.id);
-          } else {
-            await sbClient.from('user_subscriptions').insert({ user_id: currentUser.name, subscription: subJson, updated_at: new Date().toISOString() });
+        try {
+          let subscription = await registration.pushManager.getSubscription();
+          if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
           }
+
+          // 将最新订阅持久化到 Supabase
+          if (subscription && sbClient && currentUser.name) {
+            const subJson = subscription.toJSON();
+            await sbClient.from('user_subscriptions').upsert({
+              user_id: currentUser.name,
+              endpoint: subscription.endpoint,
+              subscription: subJson,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id,endpoint' });
+          }
+        } catch (err) {
+          console.warn("获取 PushSubscription 异常:", err);
         }
-      } catch (err) {
-        console.warn("WebPush 初始化提示:", err);
+      } else if (Notification.permission === 'denied') {
+        if (statusEl) statusEl.innerText = '通知权限已被系统拒绝';
+      } else {
+        if (statusEl) statusEl.innerText = '未授权系统通知';
       }
     }
 
-    async function triggerWebPushNotification(targetUser, title, body, url = "/", icon = currentUser.avatar) {
+    async function triggerWebPushNotification(targetUser, title, body, url = "/", icon = currentUser.avatar, senderId = "") {
       try {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
+        await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-          body: JSON.stringify({ target_user: targetUser, title, body, icon, url })
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            target_user: targetUser,
+            title,
+            body,
+            icon,
+            url,
+            sender_id: senderId
+          })
         });
-        if (!res.ok) {
-          console.warn("Edge Function 返回异常状态:", res.status);
-        }
       } catch (err) {
         console.warn("调用 Edge Function 推送接口失败:", err);
       }
@@ -2900,8 +2922,16 @@
         if (!sbClient) throw new Error();
         await sbClient.from('messages').insert([newMsg]);
 
+        // 仅向其他人推送 WebPush
         if (activeChatId !== currentUser.name) {
-          triggerWebPushNotification(activeChatId, `${currentUser.name}`, type === 'text' ? content : `[${type}]`, '/', currentUser.avatar);
+          triggerWebPushNotification(
+            activeChatId,
+            `${currentUser.name}`,
+            type === 'text' ? content : `[${type}]`,
+            '/',
+            currentUser.avatar,
+            currentUser.name // 传入 sender_id，供通知点击跳转
+          );
         }
       } catch (e) {
         localStorage.setItem(`MSGS_${currentUser.name}_${activeChatId}`, JSON.stringify(currentChatMessages));
@@ -3095,6 +3125,16 @@
     });
 
     window.addEventListener("DOMContentLoaded", initUserInfo);
+    // 监听来自 Service Worker 点击通知后的切换聊天窗口指令
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SWITCH_CHAT' && event.data.contactId) {
+          if (currentTab !== 'chat') switchNavTab('chat');
+          switchChat(event.data.contactId);
+          if (window.innerWidth <= 768) openMobileChat();
+        }
+      });
+    }
   </script>
 </body>
 
