@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>WeChat</title>
+  <title>MD3 Cloud Chat</title>
   <!-- Google Fonts & Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -670,8 +670,8 @@
     const SUPABASE_ANON_KEY = "sb_publishable_HEeNPSqD75cWlnmZjcVHKA_Pw-OdL_A";
     const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    // 🔴 请填入你的 VAPID Public Key
-    const VAPID_PUBLIC_KEY = "BMVUuTJ0K6hICjU7Zcjv8cs6kIN1gOLcctsYntQagVeMmW1v5GoZ7IBQR0NcG1Ds99HMVOobQHbHVQ2zOksezhs";
+    // 🔴 填入你的 VAPID Public Key
+    const VAPID_PUBLIC_KEY = "你的_VAPID_PUBLIC_KEY";
 
     // ====================================================
     // 2. 全局状态
@@ -685,7 +685,7 @@
     let tempTargetUser = null; 
 
     // ====================================================
-    // 3. WebPush 注册 (修复 428C9 自动生成列错误)
+    // 3. WebPush 注册
     // ====================================================
     function urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -728,12 +728,10 @@
         document.getElementById('pushStatus').innerText = '已启用';
         document.getElementById('enablePushBtn').style.display = 'none';
 
-        // 🌟 修复点：endpoint 为自动生成列，严禁显式插入 endpoint 字段
         if (sbClient && currentUser.name) {
           const subJson = subscription.toJSON();
           const endpointUrl = subscription.endpoint;
 
-          // 1. 先检索当前用户是否已登记过此 endpoint
           const { data: existing } = await sbClient
             .from('user_subscriptions')
             .select('id')
@@ -742,7 +740,6 @@
             .maybeSingle();
 
           if (existing) {
-            // 更新已存在的订阅对象
             await sbClient
               .from('user_subscriptions')
               .update({
@@ -751,7 +748,6 @@
               })
               .eq('id', existing.id);
           } else {
-            // 插入新记录 (不提供 endpoint 字段，由数据库自动生成)
             await sbClient
               .from('user_subscriptions')
               .insert({
@@ -767,18 +763,28 @@
       }
     }
 
-    // 调用 Edge Function 发送推送
+    // 🌟 修复：显式附带 Headers 调用 Edge Function，彻底杜绝 UNAUTHORIZED 拦截
     async function triggerWebPushNotification(targetUser, title, body, url = "/") {
       try {
-        if (!sbClient) return;
-        await sbClient.functions.invoke('push-notification', {
-          body: {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
             target_user: targetUser,
             title: title,
             body: body,
             url: url
-          }
+          })
         });
+        
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          console.warn("Edge function push response error:", data);
+        }
       } catch (err) {
         console.error("调用 Edge Function 失败:", err);
       }
@@ -1068,6 +1074,7 @@
           const { error } = await sbClient.from('friend_requests').insert([reqPayload]);
           if (error) throw error;
 
+          // 触发系统推送
           triggerWebPushNotification(
             tempTargetUser.name,
             `好友申请: ${currentUser.name}`,
@@ -1396,7 +1403,7 @@
     }
 
     // ====================================================
-    // 8. 文件处理与交互
+    // 8. 文件处理与常用交互
     // ====================================================
     function handleFileUpload(e) {
       const file = e.target.files[0];
