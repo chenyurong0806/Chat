@@ -59,7 +59,7 @@
       color: var(--md-sys-color-on-surface);
     }
 
-    /* 整体撑满屏幕的主容器 */
+    /* 撑满全屏的主容器 */
     .app-viewport {
       width: 100vw;
       height: 100vh;
@@ -409,7 +409,7 @@
       font-weight: 500;
     }
 
-    /* 常用 MD3 通用弹窗 (设置、添加好友) */
+    /* 常用 MD3 通用弹窗 */
     .md3-dialog {
       background: var(--md-sys-color-surface);
       border-radius: var(--md-shape-corner-large);
@@ -593,19 +593,19 @@
 
   <script>
     // ====================================================
-    // 1. Supabase Client 初始化与配置
+    // 1. Supabase Client 初始化 (避免与全局 window.supabase 重名)
     // ====================================================
     const SUPABASE_URL = "https://mamubvgmcetepllznifl.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_HEeNPSqD75cWlnmZjcVHKA_Pw-OdL_A";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
     // ====================================================
     // 2. 全局状态
     // ====================================================
     let currentUser = { id: "", name: "", isLoggedIn: false, avatar: "" };
-    let contacts = []; // 好友列表
-    let activeChatId = ""; // 当前选中的联系人 ID
-    let currentChatMessages = []; // 当前窗口消息列表
+    let contacts = []; 
+    let activeChatId = ""; 
+    let currentChatMessages = []; 
 
     // ====================================================
     // 3. 用户信息初始化
@@ -657,15 +657,12 @@
     }
 
     function postInit() {
-      // 渲染主界面当前头像与信息
       document.getElementById("myAvatarImg").src = currentUser.avatar;
       document.getElementById("cardAvatar").src = currentUser.avatar;
       document.getElementById("cardName").innerText = currentUser.name;
       document.getElementById("cardUid").innerText = `uid:${currentUser.id}`;
 
-      // 初始化联系人列表：只包含“自己”
       loadContacts();
-      // 开启 Supabase Realtime 监听消息
       initSupabaseRealtime();
     }
 
@@ -679,7 +676,6 @@
       if (saved) {
         contacts = JSON.parse(saved);
       } else {
-        // 初始仅添加“自己”
         contacts = [
           {
             id: currentUser.id,
@@ -703,13 +699,14 @@
       localStorage.setItem(storageKey, JSON.stringify(contacts));
     }
 
-    function renderChatList() {
+    function renderChatList(listToRender = null) {
       const container = document.getElementById("chatListContainer");
       container.innerHTML = "";
 
-      contacts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      const targetList = listToRender || contacts;
+      targetList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-      contacts.forEach(contact => {
+      targetList.forEach(contact => {
         const item = document.createElement("div");
         item.className = `chat-item ${contact.id === activeChatId ? 'active' : ''}`;
         item.onclick = () => switchChat(contact.id);
@@ -727,6 +724,16 @@
         `;
         container.appendChild(item);
       });
+    }
+
+    function filterChats() {
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      if (!query) {
+        renderChatList();
+        return;
+      }
+      const filtered = contacts.filter(c => c.name.toLowerCase().includes(query));
+      renderChatList(filtered);
     }
 
     function switchChat(contactId) {
@@ -747,8 +754,8 @@
       container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:12px;">加载云端记录中...</div>`;
 
       try {
-        // 用户隔离查询：(sender = me and receiver = active) OR (sender = active and receiver = me)
-        const { data, error } = await supabase
+        if (!sbClient) throw new Error("Supabase client not initialized");
+        const { data, error } = await sbClient
           .from('messages')
           .select('*')
           .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`)
@@ -757,7 +764,7 @@
         if (error) throw error;
         currentChatMessages = data || [];
       } catch (err) {
-        console.warn("从 Supabase 加载失败或表未创建，启用本地缓存读取", err);
+        console.warn("从 Supabase 加载失败或表未就绪，使用本地存储", err);
         const localKey = `MSGS_${currentUser.id}_${activeChatId}`;
         currentChatMessages = JSON.parse(localStorage.getItem(localKey) || "[]");
       }
@@ -823,20 +830,17 @@
         created_at: new Date().toISOString()
       };
 
-      // 1. 本地迅速呈现
       currentChatMessages.push(newMsg);
       renderMessages();
       if (type === 'text') textarea.value = "";
 
-      // 更新联系人列表中的最后一条消息
       updateContactLastMessage(activeChatId, type === 'text' ? content : `[${type}]`);
 
-      // 2. 上传到 Supabase
       try {
-        const { error } = await supabase.from('messages').insert([newMsg]);
+        if (!sbClient) throw new Error("Supabase client not initialized");
+        const { error } = await sbClient.from('messages').insert([newMsg]);
         if (error) throw error;
       } catch (err) {
-        console.warn("保存到 Supabase 失败，已转存本地", err);
         const localKey = `MSGS_${currentUser.id}_${activeChatId}`;
         localStorage.setItem(localKey, JSON.stringify(currentChatMessages));
       }
@@ -857,11 +861,11 @@
     // 6. Supabase Realtime 实时订阅
     // ====================================================
     function initSupabaseRealtime() {
-      supabase
+      if (!sbClient) return;
+      sbClient
         .channel('public:messages')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           const msg = payload.new;
-          // 仅接收与当前登录用户相关的隔离数据
           if (msg.receiver_id === currentUser.id) {
             if (msg.sender_id === activeChatId) {
               currentChatMessages.push(msg);
@@ -914,7 +918,6 @@
 
       let foundUser = null;
 
-      // 1. 尝试从 Cloudflare D1 驱动的后端接口查询
       try {
         const res = await fetch(`/api/users/search?username=${encodeURIComponent(targetUsername)}`);
         if (res.ok) {
@@ -922,18 +925,16 @@
           if (json.user) foundUser = json.user;
         }
       } catch (err) {
-        console.log("D1 API 查询未响应，尝试 Supabase profiles 表");
+        console.log("D1 API 查询未响应，使用降级策略");
       }
 
-      // 2. 备选方案：从 Supabase users/profiles 查询或构造临时好友
-      if (!foundUser) {
+      if (!foundUser && sbClient) {
         try {
-          const { data } = await supabase.from('profiles').select('*').eq('username', targetUsername).single();
+          const { data } = await sbClient.from('profiles').select('*').eq('username', targetUsername).single();
           if (data) foundUser = data;
         } catch (e) {}
       }
 
-      // 如果未找到任何云端实体，按输入名称直接建立新会话对象
       if (!foundUser) {
         foundUser = {
           id: `user_${targetUsername}`,
@@ -942,7 +943,6 @@
         };
       }
 
-      // 判断是否已存在
       const exists = contacts.find(c => c.id === foundUser.id || c.name === foundUser.name);
       if (exists) {
         resultArea.innerHTML = `<p style="color:var(--md-sys-color-primary); font-size:13px; margin-top:8px;">该好友已在列表</p>`;
