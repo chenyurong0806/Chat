@@ -2,12 +2,30 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MD3 Cloud Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>WeChat</title>
   <!-- Google Fonts & Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  
+  <!-- 1. 普通浏览器标签页图标 -->
+  <link rel="icon" type="image/png" href="/icon.png">
+
+  <!-- 2. iPhone / iPad 添加到主屏幕的 App 图标 (核心) -->
+  <link rel="apple-touch-icon" href="/icon.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="/icon.png">
+
+  <!-- 3. iOS Web App 原生沉浸式体验（全屏打开，隐藏 Safari 网址栏和底栏） -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- 状态栏风格：default(白底黑字) / black / black-translucent -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <!-- 添加到主屏幕时默认显示的 App 名字 -->
+  <meta name="apple-mobile-web-app-title" content="WeChat">
+
+  <!-- 4. PWA 配置文件关联 -->
+  <link rel="manifest" href="/manifest.json">
+  
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -65,9 +83,10 @@
       width: 100vw;
       height: 100vh;
       display: flex;
+      position: relative;
     }
 
-    /* 1. 左侧导航 Rail */
+    /* ================= 1. 导航 Rail (桌面侧边 / 移动端底部) ================= */
     .nav-rail {
       width: 68px;
       height: 100%;
@@ -77,7 +96,7 @@
       align-items: center;
       padding: 16px 0;
       border-right: 1px solid var(--md-sys-color-outline-variant);
-      z-index: 10;
+      z-index: 20;
       flex-shrink: 0;
     }
 
@@ -101,6 +120,7 @@
       height: 44px;
       border-radius: var(--md-shape-corner-full);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       margin-bottom: 12px;
@@ -114,22 +134,24 @@
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
     }
+    .nav-label { display: none; font-size: 11px; margin-top: 2px; }
 
     .badge-dot {
       position: absolute;
-      top: 8px;
+      top: 6px;
       right: 10px;
       width: 8px;
       height: 8px;
       background: var(--md-sys-color-error);
       border-radius: 50%;
       display: none;
+      z-index: 10;
     }
     .badge-dot.show { display: block; }
 
     .nav-spacer { flex: 1; }
 
-    /* 2. 中间列表侧边栏 */
+    /* ================= 2. 中间列表侧边栏 ================= */
     .chat-sidebar {
       width: 320px;
       height: 100%;
@@ -138,6 +160,7 @@
       flex-direction: column;
       border-right: 1px solid var(--md-sys-color-outline-variant);
       flex-shrink: 0;
+      z-index: 10;
     }
 
     .sidebar-header {
@@ -206,29 +229,35 @@
       border-left: 3px solid var(--md-sys-color-primary);
     }
 
-    .list-avatar {
+    /* 头像与图层修复的小红点 */
+    .list-avatar-wrapper {
+      position: relative;
       width: 44px;
       height: 44px;
+      flex-shrink: 0;
+    }
+    .list-avatar {
+      width: 100%;
+      height: 100%;
       border-radius: var(--md-shape-corner-full);
       background: var(--md-sys-color-surface-container-highest);
-      flex-shrink: 0;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
     }
     .list-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
     .item-badge-unread {
       position: absolute;
-      top: 0;
-      right: 0;
+      top: -2px;
+      right: -2px;
       width: 10px;
       height: 10px;
       background: var(--md-sys-color-error);
       border: 2px solid var(--md-sys-color-surface);
       border-radius: 50%;
+      z-index: 10;
     }
 
     .list-info { flex: 1; min-width: 0; }
@@ -237,7 +266,7 @@
     .list-time { font-size: 11px; opacity: 0.7; }
     .list-desc { font-size: 13px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 3. 右侧主工作区 */
+    /* ================= 3. 右侧主工作区 ================= */
     .stage-container {
       flex: 1;
       height: 100%;
@@ -245,23 +274,26 @@
       flex-direction: column;
       background: var(--md-sys-color-surface);
       position: relative;
+      z-index: 15;
     }
 
     .stage-header {
       height: 60px;
-      padding: 0 20px;
+      padding: 0 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--md-sys-color-outline-variant);
       background: var(--md-sys-color-surface);
     }
+    .stage-header-left { display: flex; align-items: center; gap: 8px; }
+    .mobile-back-btn { display: none; }
     .stage-title { font-size: 16px; font-weight: 600; }
 
     .messages-viewport {
       flex: 1;
       overflow-y: auto;
-      padding: 20px 24px;
+      padding: 16px 20px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -271,7 +303,7 @@
     .message-row {
       display: flex;
       gap: 12px;
-      max-width: 72%;
+      max-width: 76%;
       user-select: text;
       position: relative;
     }
@@ -317,6 +349,23 @@
       border-radius: 4px 20px 20px 20px;
     }
 
+    /* 引用渲染块 */
+    .msg-quote-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.08);
+      margin-bottom: 4px;
+      border-left: 2px solid var(--md-sys-color-primary);
+      color: inherit;
+      opacity: 0.85;
+      word-break: break-word;
+    }
+    .message-row.sent .msg-quote-badge {
+      background: rgba(255, 255, 255, 0.18);
+      border-left-color: #ffffff;
+    }
+
     .msg-recalled {
       font-size: 12px;
       color: var(--md-sys-color-outline);
@@ -342,24 +391,44 @@
     .file-bubble .material-symbols-outlined { font-size: 32px; color: var(--md-sys-color-primary); }
 
     .img-bubble {
-      max-width: 260px;
-      max-height: 260px;
+      max-width: 240px;
+      max-height: 240px;
       border-radius: var(--md-shape-corner-medium);
       cursor: pointer;
       object-fit: cover;
     }
 
+    /* 输入区域与引用预览卡片 */
     .chat-input-area {
-      padding: 12px 20px;
+      padding: 8px 16px 12px 16px;
       border-top: 1px solid var(--md-sys-color-outline-variant);
       background: var(--md-sys-color-surface);
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
+
+    .quote-preview-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--md-sys-color-surface-container-highest);
+      padding: 6px 12px;
+      border-radius: var(--md-shape-corner-small);
+      border-left: 3px solid var(--md-sys-color-primary);
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+    .quote-preview-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 85%;
+    }
+
     .chat-textarea {
       width: 100%;
-      height: 64px;
+      height: 56px;
       resize: none;
       border: none;
       outline: none;
@@ -371,30 +440,30 @@
 
     .requests-panel {
       flex: 1;
-      padding: 24px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
     .req-card {
       background: var(--md-sys-color-surface-container);
-      padding: 14px 18px;
+      padding: 14px 16px;
       border-radius: var(--md-shape-corner-medium);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
     }
-    .req-user-info { display: flex; align-items: center; gap: 14px; }
-    .req-user-avatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+    .req-user-info { display: flex; align-items: center; gap: 12px; }
+    .req-user-avatar { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
     .req-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .req-meta-name { font-weight: 600; font-size: 15px; }
-    .req-meta-msg { font-size: 13px; color: var(--md-sys-color-on-surface-variant); margin-top: 4px; }
+    .req-meta-name { font-weight: 600; font-size: 14px; }
+    .req-meta-msg { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 3px; }
     .req-meta-time { font-size: 11px; color: var(--md-sys-color-outline); margin-top: 2px; }
     .req-actions { display: flex; gap: 8px; align-items: center; }
 
-    /* ================= 4. MD3 右键上下文菜单系统 ================= */
+    /* ================= 4. MD3 右键上下文菜单 ================= */
     .md3-context-menu {
       position: fixed;
       display: none;
@@ -423,23 +492,12 @@
       justify-content: space-between;
       transition: background 0.15s ease;
     }
-    .context-menu-item:hover {
-      background: var(--md-sys-color-surface-container-high);
-    }
-    .context-menu-item.danger {
-      color: var(--md-sys-color-error);
-    }
-    .context-menu-item.danger:hover {
-      background: var(--md-sys-color-error-container);
-    }
+    .context-menu-item:hover { background: var(--md-sys-color-surface-container-high); }
+    .context-menu-item.danger { color: var(--md-sys-color-error); }
+    .context-menu-item.danger:hover { background: var(--md-sys-color-error-container); }
+    .context-menu-divider { height: 1px; background: var(--md-sys-color-outline-variant); margin: 4px 0; }
 
-    .context-menu-divider {
-      height: 1px;
-      background: var(--md-sys-color-outline-variant);
-      margin: 4px 0;
-    }
-
-    /* 5. MD3 自由拖拽窗口 */
+    /* ================= 5. MD3 弹窗系统 ================= */
     .draggable-modal-wrapper {
       position: fixed;
       top: 0;
@@ -557,34 +615,103 @@
       font-weight: 500;
     }
 
-    #fileInput { display: none; }
+    #fileInput, #popoutFileInput { display: none; }
+
+    /* ================= 6. 移动端 UI 适配 (全屏无缝切换) ================= */
+    @media (max-width: 768px) {
+      .app-viewport { flex-direction: column-reverse; }
+
+      /* 底部导航栏 */
+      .nav-rail {
+        width: 100vw;
+        height: 56px;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 0;
+        border-right: none;
+        border-top: 1px solid var(--md-sys-color-outline-variant);
+        background: var(--md-sys-color-surface);
+      }
+      .user-avatar-btn { display: none; }
+      .nav-spacer { display: none; }
+      .nav-item {
+        margin-bottom: 0;
+        width: auto;
+        height: 100%;
+        flex: 1;
+        border-radius: 0;
+        background: transparent !important;
+      }
+      .nav-item.active { color: var(--md-sys-color-primary); }
+      .nav-label { display: block; }
+      .nav-item .material-symbols-outlined { font-size: 22px; }
+
+      /* 消息列表全屏 */
+      .chat-sidebar {
+        width: 100vw;
+        height: calc(100vh - 56px);
+        border-right: none;
+      }
+
+      /* 聊天视口移动端全屏 */
+      .stage-container {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 100;
+        display: none;
+      }
+      .stage-container.mobile-active {
+        display: flex;
+      }
+      .mobile-back-btn {
+        display: flex;
+      }
+
+      /* 移动端禁用桌面浮动拖拽，转为原生弹窗 */
+      .md3-window {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 90vw !important;
+        max-width: 360px !important;
+      }
+      .window-header-drag { cursor: default; }
+    }
   </style>
 </head>
 <body>
 
   <div class="app-viewport">
+    <!-- 1. 导航 Rail -->
     <aside class="nav-rail">
       <div class="user-avatar-btn" id="myAvatarBtn" onclick="openProfileCard()" title="个人信息">
         <img id="myAvatarImg" src="" alt="Me">
       </div>
 
-      <div class="nav-item active" id="navChatBtn" onclick="switchNavTab('chat')" title="消息">
+      <div class="nav-item active" id="navChatBtn" onclick="switchNavTab('chat')" title="微信">
         <span class="material-symbols-outlined">chat_bubble</span>
+        <span class="nav-label">微信</span>
       </div>
 
       <div class="nav-item" id="navContactsBtn" onclick="switchNavTab('contacts')" title="通讯录">
         <span class="material-symbols-outlined">contacts</span>
+        <span class="nav-label">通讯录</span>
         <div class="badge-dot" id="contactBadgeDot"></div>
       </div>
 
       <div class="nav-spacer"></div>
 
-      <div class="nav-item" id="navSettingsBtn" onclick="openSettingsModal()" title="更多/设置">
-        <span class="material-symbols-outlined">menu</span>
+      <div class="nav-item" id="navSettingsBtn" onclick="openSettingsModal()" title="我">
+        <span class="material-symbols-outlined">person</span>
+        <span class="nav-label">我</span>
       </div>
     </aside>
 
-    <section class="chat-sidebar">
+    <!-- 2. 会话列表侧边栏 -->
+    <section class="chat-sidebar" id="chatSidebar">
       <div class="sidebar-header">
         <div class="search-box">
           <span class="material-symbols-outlined" style="font-size: 18px;">search</span>
@@ -598,9 +725,15 @@
       <div class="list-scroll-area" id="listScrollContainer"></div>
     </section>
 
-    <main class="stage-container">
+    <!-- 3. 右侧主工作区 (移动端全屏视口) -->
+    <main class="stage-container" id="stageContainer">
       <div class="stage-header">
-        <div class="stage-title" id="stageTitle">聊天</div>
+        <div class="stage-header-left">
+          <button class="icon-btn mobile-back-btn" onclick="closeMobileChat()" title="返回">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <div class="stage-title" id="stageTitle">聊天</div>
+        </div>
         <button class="icon-btn"><span class="material-symbols-outlined">more_horiz</span></button>
       </div>
 
@@ -609,6 +742,12 @@
         <div class="messages-viewport" id="messagesViewport"></div>
 
         <div class="chat-input-area">
+          <!-- 引用提示预览条 -->
+          <div class="quote-preview-bar" id="quotePreviewBar" style="display:none;">
+            <div class="quote-preview-text" id="quotePreviewText">引用内容</div>
+            <button class="icon-btn" style="width:24px; height:24px;" onclick="cancelQuote()"><span class="material-symbols-outlined" style="font-size:16px;">close</span></button>
+          </div>
+
           <div style="display:flex; gap:6px;">
             <button class="icon-btn" title="表情" onclick="insertEmoji('😊')">
               <span class="material-symbols-outlined">mood</span>
@@ -627,28 +766,28 @@
         </div>
       </div>
 
-      <!-- 通讯录面板 -->
+      <!-- 通讯录验证管理面板 -->
       <div id="contactsPane" style="display:none; flex-direction:column; flex:1; height:calc(100% - 60px);">
         <div class="requests-panel" id="requestsPanel"></div>
       </div>
     </main>
   </div>
 
-  <!-- ================= MD3 右键菜单组件 ================= -->
+  <!-- ================= MD3 右键上下文菜单 ================= -->
 
-  <!-- 1. 好友列表项右键菜单 (仿微信) -->
+  <!-- 好友项右键菜单 -->
   <div class="md3-context-menu" id="friendContextMenu">
     <div class="context-menu-item" id="ctxPinBtn" onclick="togglePinContact()">置顶</div>
     <div class="context-menu-item" id="ctxUnreadBtn" onclick="toggleUnreadContact()">标为未读</div>
     <div class="context-menu-item" id="ctxMuteBtn" onclick="toggleMuteContact()">消息免打扰</div>
     <div class="context-menu-divider"></div>
-    <div class="context-menu-item" onclick="openIndependentWindow()">独立窗口显示</div>
+    <div class="context-menu-item" id="ctxPopoutBtn" onclick="openIndependentWindow()">独立窗口显示</div>
     <div class="context-menu-item" onclick="hideContact()">不显示</div>
     <div class="context-menu-divider"></div>
     <div class="context-menu-item danger" onclick="deleteContact()">删除</div>
   </div>
 
-  <!-- 2. 消息气泡右键菜单 -->
+  <!-- 消息气泡右键菜单 -->
   <div class="md3-context-menu" id="msgContextMenu">
     <div class="context-menu-item" onclick="copyMessageAction()">复制</div>
     <div class="context-menu-item" onclick="forwardMessageAction()">转发</div>
@@ -660,7 +799,30 @@
 
   <!-- ================= 弹窗系统 ================= -->
 
-  <!-- 弹窗：转发消息选择好友窗口 -->
+  <!-- 弹窗：独立聊天窗口 (高保真全功能) -->
+  <div class="draggable-modal-wrapper" id="popoutChatModalWrapper">
+    <div class="md3-window" id="popoutChatWin" style="width: 480px; height: 540px; top: 12%; left: 28%;">
+      <div class="window-header-drag" onmousedown="startDrag(event, 'popoutChatWin')">
+        <span id="popoutChatTitle">独立聊天</span>
+        <button class="icon-btn" onclick="closeModal('popoutChatModalWrapper')"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; height:calc(100% - 40px);">
+        <div class="messages-viewport" id="popoutMessagesViewport" style="flex:1;"></div>
+        <div class="chat-input-area" style="padding:8px 14px;">
+          <div style="display:flex; gap:6px;">
+            <button class="icon-btn" onclick="document.getElementById('popoutFileInput').click()"><span class="material-symbols-outlined">folder</span></button>
+            <input type="file" id="popoutFileInput" onchange="handleFileUpload(event)">
+          </div>
+          <textarea class="chat-textarea" id="popoutChatInput" style="height:48px;" placeholder="输入消息 (Enter 发送)..."></textarea>
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn-filled" onclick="sendPopoutMessage()">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗：转发选择好友 -->
   <div class="draggable-modal-wrapper" id="forwardModalWrapper">
     <div class="md3-window" id="forwardWin" style="width: 320px; top: 20%; left: 36%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'forwardWin')">
@@ -673,23 +835,7 @@
     </div>
   </div>
 
-  <!-- 弹窗：独立聊天小窗口 (可拖拽) -->
-  <div class="draggable-modal-wrapper" id="popoutChatModalWrapper">
-    <div class="md3-window" id="popoutChatWin" style="width: 440px; height: 500px; top: 15%; left: 30%;">
-      <div class="window-header-drag" onmousedown="startDrag(event, 'popoutChatWin')">
-        <span id="popoutChatTitle">独立聊天</span>
-        <button class="icon-btn" onclick="closeModal('popoutChatModalWrapper')"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <div style="flex:1; display:flex; flex-direction:column; height:calc(100% - 40px);">
-        <div class="messages-viewport" id="popoutMessagesViewport" style="flex:1;"></div>
-        <div class="chat-input-area" style="padding:8px 14px;">
-          <input type="text" class="apply-input" id="popoutChatInput" placeholder="输入消息 (Enter 发送)..." onkeydown="if(event.key==='Enter') sendPopoutMessage()">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 弹窗：搜索用户窗口 -->
+  <!-- 弹窗：搜索用户 -->
   <div class="draggable-modal-wrapper" id="addFriendModalWrapper">
     <div class="md3-window" id="addFriendWin" style="width: 360px; top: 18%; left: 34%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'addFriendWin')">
@@ -706,7 +852,7 @@
     </div>
   </div>
 
-  <!-- 弹窗：申请添加朋友窗口 -->
+  <!-- 弹窗：申请添加朋友 -->
   <div class="draggable-modal-wrapper" id="applyModalWrapper">
     <div class="md3-window" id="applyWin" style="width: 350px; top: 14%; left: 36%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'applyWin')">
@@ -826,9 +972,10 @@
     let friendRequests = []; 
     let tempTargetUser = null; 
 
-    // 右键上下文对象
+    // 右键上下文与引用状态
     let contextTargetContactId = null;
     let contextTargetMsg = null;
+    let currentQuoteData = null; // 当前正在引用的消息对象
 
     // ====================================================
     // 3. WebPush 注册与触发
@@ -888,19 +1035,12 @@
           if (existing) {
             await sbClient
               .from('user_subscriptions')
-              .update({
-                subscription: subJson,
-                updated_at: new Date().toISOString()
-              })
+              .update({ subscription: subJson, updated_at: new Date().toISOString() })
               .eq('id', existing.id);
           } else {
             await sbClient
               .from('user_subscriptions')
-              .insert({
-                user_id: currentUser.name,
-                subscription: subJson,
-                updated_at: new Date().toISOString()
-              });
+              .insert({ user_id: currentUser.name, subscription: subJson, updated_at: new Date().toISOString() });
           }
         }
       } catch (err) {
@@ -911,25 +1051,15 @@
 
     async function triggerWebPushNotification(targetUser, title, body, url = "/") {
       try {
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
+        await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({
-            target_user: targetUser,
-            title: title,
-            body: body,
-            url: url
-          })
+          body: JSON.stringify({ target_user: targetUser, title: title, body: body, url: url })
         });
-        
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          console.warn("Edge function push response error:", data);
-        }
       } catch (err) {
         console.error("调用 Edge Function 失败:", err);
       }
@@ -991,7 +1121,7 @@
     }
 
     // ====================================================
-    // 5. 联系人管理与渲染 (含置顶、免打扰、未读状态)
+    // 5. 联系人管理 (支持置顶、未读图层修复、移动端跳转)
     // ====================================================
     function loadContacts() {
       const storageKey = `MD3_CONTACTS_${currentUser.name}`;
@@ -1067,10 +1197,15 @@
         const pendingCount = friendRequests.filter(r => r.receiver_id === currentUser.name && r.status === 'pending').length;
         const newFriendItem = document.createElement("div");
         newFriendItem.className = "list-item";
-        newFriendItem.onclick = () => switchNavTab("contacts");
+        newFriendItem.onclick = () => {
+          switchNavTab("contacts");
+          if (window.innerWidth <= 768) openMobileChat();
+        };
         newFriendItem.innerHTML = `
-          <div class="list-avatar" style="background:var(--md-sys-color-primary); color:white;">
-            <span class="material-symbols-outlined">person_add</span>
+          <div class="list-avatar-wrapper">
+            <div class="list-avatar" style="background:var(--md-sys-color-primary); color:white;">
+              <span class="material-symbols-outlined">person_add</span>
+            </div>
           </div>
           <div class="list-info">
             <div class="list-top"><span class="list-name">新的朋友</span></div>
@@ -1082,7 +1217,7 @@
 
       let list = filteredList || contacts.filter(c => !c.isHidden);
       
-      // 排序：置顶优先，其次按最新时间
+      // 置顶优先排序
       list.sort((a, b) => {
         if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
         return (b.timestamp || 0) - (a.timestamp || 0);
@@ -1091,19 +1226,22 @@
       list.forEach(contact => {
         const item = document.createElement("div");
         item.className = `list-item ${contact.id === activeChatId && currentTab === 'chat' ? 'active' : ''} ${contact.isPinned ? 'pinned' : ''}`;
+        
         item.onclick = () => {
-          contact.isUnread = false;
+          contact.isUnread = false; // 已读
           saveContacts();
           if (currentTab === 'contacts') switchNavTab('chat');
           switchChat(contact.id);
+          if (window.innerWidth <= 768) openMobileChat();
         };
         
-        // 绑定好友列表右键菜单
         item.oncontextmenu = (e) => openFriendContextMenu(e, contact.id);
 
         item.innerHTML = `
-          <div class="list-avatar">
-            <img src="${contact.avatar}" alt="">
+          <div class="list-avatar-wrapper">
+            <div class="list-avatar">
+              <img src="${contact.avatar}" alt="">
+            </div>
             ${contact.isUnread ? '<div class="item-badge-unread"></div>' : ''}
           </div>
           <div class="list-info">
@@ -1133,18 +1271,29 @@
 
     function switchChat(contactId) {
       activeChatId = contactId;
-      renderCurrentTabList();
       const current = contacts.find(c => c.id === activeChatId);
       if (current) {
+        current.isUnread = false;
+        saveContacts();
         document.getElementById("stageTitle").innerText = current.name;
       }
+      renderCurrentTabList();
       loadMessagesForActiveChat();
     }
 
+    // 移动端全屏聊天控制
+    function openMobileChat() {
+      document.getElementById("stageContainer").classList.add("mobile-active");
+    }
+    function closeMobileChat() {
+      document.getElementById("stageContainer").classList.remove("mobile-active");
+    }
+
     // ====================================================
-    // 6. 好友右键菜单交互逻辑
+    // 6. 好友右键菜单 & 双向删除同步
     // ====================================================
     function openFriendContextMenu(e, contactId) {
+      if (window.innerWidth <= 768) return; // 移动端禁用桌面浮动右键菜单
       e.preventDefault();
       e.stopPropagation();
       closeAllContextMenus();
@@ -1153,7 +1302,6 @@
       const contact = contacts.find(c => c.id === contactId);
       if (!contact) return;
 
-      // 更新菜单项文案状态
       document.getElementById("ctxPinBtn").innerText = contact.isPinned ? "取消置顶" : "置顶";
       document.getElementById("ctxUnreadBtn").innerText = contact.isUnread ? "标为已读" : "标为未读";
       document.getElementById("ctxMuteBtn").innerText = contact.isMuted ? "允许消息提醒" : "消息免打扰";
@@ -1202,31 +1350,42 @@
       closeAllContextMenus();
     }
 
-    function deleteContact() {
+    // 🌟 删除好友（双向实时同步）
+    async function deleteContact() {
       if (contextTargetContactId === currentUser.name) {
         alert("不能删除文件传输助手 (自己)");
         closeAllContextMenus();
         return;
       }
-      if (confirm(`确定要删除好友「${contextTargetContactId}」及相关会话吗？`)) {
-        contacts = contacts.filter(c => c.id !== contextTargetContactId);
+      const targetId = contextTargetContactId;
+      if (confirm(`确定要删除好友「${targetId}」吗？双方都将同步删除。`)) {
+        contacts = contacts.filter(c => c.id !== targetId);
         saveContacts();
-        if (activeChatId === contextTargetContactId) {
+        if (activeChatId === targetId) {
           activeChatId = contacts[0]?.id || "";
         }
         renderCurrentTabList();
         loadMessagesForActiveChat();
+
+        // 广播通知对方同步删除自己
+        if (sbClient) {
+          sbClient.channel('realtime:chat_sync').send({
+            type: 'broadcast',
+            event: 'delete_friend_sync',
+            payload: { sender: currentUser.name, target: targetId }
+          });
+        }
       }
       closeAllContextMenus();
     }
 
-    // 独立窗口显示小聊天窗
+    // 独立窗口显示 (高保真全功能聊天)
     function openIndependentWindow() {
       closeAllContextMenus();
       const contact = contacts.find(c => c.id === contextTargetContactId);
       if (!contact) return;
 
-      document.getElementById("popoutChatTitle").innerText = `与 ${contact.name} 独立聊天`;
+      document.getElementById("popoutChatTitle").innerText = `${contact.name} (独立聊天)`;
       openModal("popoutChatModalWrapper");
       renderPopoutMessages();
     }
@@ -1254,16 +1413,15 @@
     }
 
     // ====================================================
-    // 7. 消息右键菜单交互逻辑 (复制、转发、提醒、引用、撤回)
+    // 7. 消息右键菜单 & 优化引用功能
     // ====================================================
     function openMessageContextMenu(e, msg) {
+      if (window.innerWidth <= 768) return;
       e.preventDefault();
       e.stopPropagation();
       closeAllContextMenus();
 
       contextTargetMsg = msg;
-
-      // 仅自己发送的消息显示撤回
       const isMe = msg.sender_id === currentUser.name;
       document.getElementById("msgRecallBtn").style.display = isMe ? "flex" : "none";
       document.getElementById("msgRecallDivider").style.display = isMe ? "block" : "none";
@@ -1272,7 +1430,6 @@
       positionMenu(e, menu);
     }
 
-    // 1. 复制
     function copyMessageAction() {
       if (!contextTargetMsg) return;
       const textToCopy = contextTargetMsg.msg_type === 'text' 
@@ -1280,14 +1437,11 @@
         : (contextTargetMsg.file_url || contextTargetMsg.file_name || "");
       
       navigator.clipboard.writeText(textToCopy).then(() => {
-        alert("消息已复制到剪贴板");
-      }).catch(() => {
-        alert("复制失败，请手动选择复制");
-      });
+        alert("已复制到剪贴板");
+      }).catch(() => {});
       closeAllContextMenus();
     }
 
-    // 2. 转发
     function forwardMessageAction() {
       if (!contextTargetMsg) return;
       closeAllContextMenus();
@@ -1321,25 +1475,32 @@
       openModal("forwardModalWrapper");
     }
 
-    // 3. 提醒
     function remindMessageAction() {
       if (!contextTargetMsg) return;
       closeAllContextMenus();
-      alert(`已为该条消息设置提醒:「${contextTargetMsg.content.substring(0, 20)}...」`);
+      alert(`已为该条消息设置提醒:「${contextTargetMsg.content.substring(0, 18)}...」`);
     }
 
-    // 4. 引用
+    // 🌟 优化引用功能：设置引用预览卡片
     function quoteMessageAction() {
       if (!contextTargetMsg) return;
       closeAllContextMenus();
 
-      const input = document.getElementById("chatInput");
-      const quoteText = `「${contextTargetMsg.sender_id}: ${contextTargetMsg.content}」\n- - - -\n`;
-      input.value = quoteText + input.value;
-      input.focus();
+      currentQuoteData = {
+        sender: contextTargetMsg.sender_id,
+        content: contextTargetMsg.msg_type === 'text' ? contextTargetMsg.content : `[${contextTargetMsg.msg_type}]`
+      };
+
+      document.getElementById("quotePreviewText").innerText = `引用 ${currentQuoteData.sender}：${currentQuoteData.content}`;
+      document.getElementById("quotePreviewBar").style.display = "flex";
+      document.getElementById("chatInput").focus();
     }
 
-    // 5. 撤回
+    function cancelQuote() {
+      currentQuoteData = null;
+      document.getElementById("quotePreviewBar").style.display = "none";
+    }
+
     async function recallMessageAction() {
       if (!contextTargetMsg) return;
       closeAllContextMenus();
@@ -1357,17 +1518,13 @@
 
       renderMessages();
 
-      // 更新云端数据
       try {
         if (sbClient && contextTargetMsg.id) {
           await sbClient.from('messages').update({ content: '[消息已被撤回]', is_recalled: true }).eq('id', contextTargetMsg.id);
         }
-      } catch (e) {
-        console.warn("撤回云端同步失败", e);
-      }
+      } catch (e) {}
     }
 
-    // 通用菜单定位器 (支持边缘防越界)
     function positionMenu(e, menuEl) {
       menuEl.style.display = "block";
       const menuWidth = menuEl.offsetWidth || 150;
@@ -1387,8 +1544,6 @@
       document.getElementById("friendContextMenu").style.display = "none";
       document.getElementById("msgContextMenu").style.display = "none";
     }
-
-    // 全局点击自动关闭右键菜单
     document.addEventListener("click", closeAllContextMenus);
 
     // ====================================================
@@ -1413,9 +1568,7 @@
             };
           }
         }
-      } catch (e) {
-        console.warn("查询 D1 接口异常:", e);
-      }
+      } catch (e) {}
 
       if (!found) {
         tempTargetUser = null;
@@ -1493,18 +1646,10 @@
 
       try {
         if (sbClient) {
-          const { error } = await sbClient.from('friend_requests').insert([reqPayload]);
-          if (error) throw error;
-
-          triggerWebPushNotification(
-            tempTargetUser.name,
-            `好友申请: ${currentUser.name}`,
-            reqPayload.message || '请求添加你为朋友'
-          );
+          await sbClient.from('friend_requests').insert([reqPayload]);
+          triggerWebPushNotification(tempTargetUser.name, `好友申请: ${currentUser.name}`, reqPayload.message || '请求添加你为朋友');
         }
-      } catch (e) {
-        console.warn("保存到 Supabase 失败", e);
-      }
+      } catch (e) {}
 
       alert("好友申请已发送！");
       closeModal('applyModalWrapper');
@@ -1552,9 +1697,7 @@
             });
           }
         }
-      } catch (e) {
-        console.warn("拉取云端申请记录失败", e);
-      }
+      } catch (e) {}
 
       checkBadgeDot();
     }
@@ -1641,19 +1784,13 @@
       try {
         if (sbClient) {
           await sbClient.from('friend_requests').update({ status: action }).eq('id', reqId);
-          triggerWebPushNotification(
-            req.sender_id,
-            `好友申请已被${action === 'accepted' ? '通过' : '拒绝'}`,
-            `${currentUser.name} ${action === 'accepted' ? '同意了你的好友申请' : '拒绝了你的好友申请'}`
-          );
+          triggerWebPushNotification(req.sender_id, `好友申请已被${action === 'accepted' ? '通过' : '拒绝'}`, `${currentUser.name} ${action === 'accepted' ? '同意了你的好友申请' : '拒绝了你的好友申请'}`);
         }
-      } catch (e) {
-        console.warn("更新申请状态到 Supabase 失败", e);
-      }
+      } catch (e) {}
     }
 
     // ====================================================
-    // 9. 云端消息收发与实时订阅
+    // 9. 云端消息收发与实时订阅 (支持引用渲染与已读状态)
     // ====================================================
     async function loadMessagesForActiveChat() {
       const container = document.getElementById("messagesViewport");
@@ -1699,6 +1836,12 @@
         row.className = `message-row ${isMe ? 'sent' : 'received'}`;
         
         let contentHtml = "";
+        let quoteHtml = "";
+
+        if (msg.quote) {
+          quoteHtml = `<div class="msg-quote-badge">「${msg.quote.sender}：${msg.quote.content}」</div>`;
+        }
+
         if (msg.msg_type === 'image') {
           contentHtml = `<img src="${msg.file_url}" class="img-bubble" onclick="window.open('${msg.file_url}')">`;
         } else if (msg.msg_type === 'file') {
@@ -1711,7 +1854,7 @@
               </div>
             </a>`;
         } else {
-          contentHtml = `<div class="msg-bubble">${msg.content}</div>`;
+          contentHtml = `<div class="msg-bubble">${quoteHtml}${msg.content}</div>`;
         }
 
         const avatar = isMe ? currentUser.avatar : (contacts.find(c=>c.id === msg.sender_id)?.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + msg.sender_id);
@@ -1721,9 +1864,7 @@
           <div class="msg-bubble-wrap">${contentHtml}</div>
         `;
 
-        // 绑定消息气泡右键菜单
         row.oncontextmenu = (e) => openMessageContextMenu(e, msg);
-
         container.appendChild(row);
       });
 
@@ -1740,6 +1881,7 @@
         receiver_id: activeChatId,
         msg_type: type,
         content: content || '',
+        quote: currentQuoteData || payload.quote || null,
         file_url: payload.file_url || null,
         file_name: payload.file_name || null,
         file_size: payload.file_size || null,
@@ -1749,12 +1891,14 @@
       currentChatMessages.push(newMsg);
       renderMessages();
       if (type === 'text') textarea.value = "";
+      cancelQuote(); // 重置引用状态
 
       const c = contacts.find(item => item.id === activeChatId);
       if (c) {
         c.lastMsg = type === 'text' ? content : `[${type}]`;
         c.lastTime = "刚刚";
         c.timestamp = Date.now();
+        c.isUnread = false;
         saveContacts();
         renderCurrentTabList();
       }
@@ -1764,11 +1908,7 @@
         await sbClient.from('messages').insert([newMsg]);
 
         if (activeChatId !== currentUser.name) {
-          triggerWebPushNotification(
-            activeChatId,
-            `${currentUser.name} 发来一条消息`,
-            type === 'text' ? content : `[${type}]`
-          );
+          triggerWebPushNotification(activeChatId, `${currentUser.name} 发来一条消息`, type === 'text' ? content : `[${type}]`);
         }
       } catch (e) {
         localStorage.setItem(`MSGS_${currentUser.name}_${activeChatId}`, JSON.stringify(currentChatMessages));
@@ -1782,13 +1922,17 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           const msg = payload.new;
           if (msg.receiver_id === currentUser.name) {
+            // 如果不是当前激活聊天窗口，标记为未读红点
+            const isCurrentlyActive = (activeChatId === msg.sender_id && document.visibilityState === 'visible');
+
             addContactIfNotExists({
               id: msg.sender_id,
               name: msg.sender_id,
               avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${msg.sender_id}`,
               lastMsg: msg.msg_type === 'text' ? msg.content : `[${msg.msg_type}]`,
               lastTime: "刚刚",
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              isUnread: !isCurrentlyActive
             });
 
             if (msg.sender_id === activeChatId) {
@@ -1803,6 +1947,20 @@
           if (idx !== -1) {
             currentChatMessages[idx] = updatedMsg;
             renderMessages();
+          }
+        })
+        // 🌟 监听好友双向删除同步事件
+        .on('broadcast', { event: 'delete_friend_sync' }, payload => {
+          const data = payload.payload;
+          if (data && data.target === currentUser.name) {
+            // 对方删除了我 -> 同步从本地移除对方
+            contacts = contacts.filter(c => c.id !== data.sender);
+            saveContacts();
+            if (activeChatId === data.sender) {
+              activeChatId = contacts[0]?.id || "";
+            }
+            renderCurrentTabList();
+            loadMessagesForActiveChat();
           }
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, payload => {
@@ -1848,7 +2006,7 @@
     }
 
     // ====================================================
-    // 10. 文件处理与常用交互
+    // 10. 文件处理与交互
     // ====================================================
     function handleFileUpload(e) {
       const file = e.target.files[0];
@@ -1875,11 +2033,12 @@
     }
 
     // ====================================================
-    // 11. 窗口自由拖拽机制
+    // 11. 窗口自由拖拽机制 (桌面端专属)
     // ====================================================
     let dragState = { isDragging: false, currentEl: null, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 };
 
     function startDrag(e, elementId) {
+      if (window.innerWidth <= 768) return; // 移动端禁用拖动
       const el = document.getElementById(elementId);
       dragState.isDragging = true;
       dragState.currentEl = el;
