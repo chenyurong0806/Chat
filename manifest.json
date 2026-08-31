@@ -4,8 +4,8 @@
   "description": "微信聊天应用",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#006a60",
+  "background_color": "#2dc100",
+  "theme_color": "#2dc100",
   "icons": [
     {
       "src": "/icon.png",
