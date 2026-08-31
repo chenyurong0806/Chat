@@ -1,39 +1,31 @@
-// sw.js - Service Worker
-self.addEventListener('push', function (event) {
-  let data = {
-    title: '微信',
-    body: '您收到了一条新消息',
-    icon: '/icon-web.png',
-    url: '/'
-  };
+// sw.js - 放置在网站根目录下
+self.addEventListener('push', function(event) {
+  if (!event.data) return;
 
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      data.body = event.data.text();
-    }
+  try {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: data.icon || 'https://api.dicebear.com/7.x/bottts/svg?seed=system',
+      badge: data.icon || 'https://api.dicebear.com/7.x/bottts/svg?seed=system',
+      tag: `push_${Date.now()}_${Math.random()}`, // 必须加上唯一 tag
+      renotify: true,
+      data: {
+        url: data.url || '/'
+      },
+      vibrate: [100, 50, 100],
+      requireInteraction: false
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  } catch (e) {
+    console.error('Error handling push event:', e);
   }
-
-  const options = {
-    body: data.body || '您收到了一条新消息',
-    icon: data.icon || '/icon-web.png',
-    badge: '/icon-web.png',
-    tag: data.tag || `push_${Date.now()}_${Math.random()}`,
-    renotify: true,
-    data: {
-      url: data.url || '/'
-    },
-    vibrate: [200, 100, 200],
-    requireInteraction: false
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title || '新消息', options)
-  );
 });
 
-self.addEventListener('notificationclick', function (event) {
+self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/';
 

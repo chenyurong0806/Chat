@@ -8,7 +8,10 @@
   <title>WeChat</title>
 
   <!-- PWA & Web App 配置 -->
+  <!-- 网页端 Favicon 图标 -->
   <link rel="icon" type="image/png" href="/icon-web.png">
+
+  <!-- iOS 添加到主屏幕图标 -->
   <link rel="apple-touch-icon" href="/icon-apple.png">
 
   <!-- Web App 与状态栏设置 -->
@@ -1355,7 +1358,8 @@
     <div class="context-menu-item" onclick="forwardMessageAction()">转发</div>
     <div class="context-menu-item" onclick="quoteMessageAction()">引用</div>
     <div class="context-menu-divider" id="msgRecallDivider" style="display:none;"></div>
-    <div class="context-menu-item danger" id="msgRecallBtn" style="display:none;" onclick="recallMessageAction()">撤回</div>
+    <div class="context-menu-item danger" id="msgRecallBtn" style="display:none;" onclick="recallMessageAction()">撤回
+    </div>
   </div>
 
   <!-- 弹窗/页面：聊天设置详情 (Chat Settings) -->
@@ -1576,12 +1580,12 @@
         <div style="font-size:13px; display:flex; flex-direction:column; gap:10px;">
           <div><strong>当前登录：</strong><span id="setUname">--</span></div>
           <div><strong>系统通知状态：</strong><span id="pushStatus">检测中...</span></div>
-          <div><strong>通知引擎：</strong>WebPush + Local ServiceWorker</div>
+          <div><strong>通知引擎：</strong>Local SW Notification + WebPush</div>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
           <button class="btn-tonal" onclick="testNotificationAction()"><span class="material-symbols-outlined"
               style="font-size:16px;">notifications_active</span>测试通知</button>
-          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启离线推送</button>
+          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启通知</button>
           <button class="btn-text" onclick="closeModal('settingsModalWrapper')">完成</button>
         </div>
       </div>
@@ -1589,12 +1593,11 @@
   </div>
 
   <script>
-    // 1. Supabase 配置与云端服务
+    // 1. Supabase 配置
     const SUPABASE_URL = "https://mamubvgmcetepllznifl.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_HEeNPSqD75cWlnmZjcVHKA_Pw-OdL_A";
     const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-    const PUSH_SERVER_URL = 'https://webpush.chenyurong.qzz.io';
-    const VAPID_PUBLIC_KEY = "BAw4UZswhaZOftayviVlwmOjsy1g_q0Q8KL27Go1dq5OhZGX5HBJEyWuaHyLn7pxr3R87Y1GkZuz07Kng_j-16M";
+    const VAPID_PUBLIC_KEY = "BMVUuTJ0K6hICjU7Zcjv8cs6kIN1gOLcctsYntQagVeMmW1v5GoZ7IBQR0NcG1Ds99HMVOobQHbHVQ2zOksezhs";
 
     // 2. 全局状态
     let currentUser = { name: "", isLoggedIn: false, avatar: "" };
@@ -1614,7 +1617,7 @@
     let originalTitle = document.title;
     let titleBlinkInterval = null;
 
-    // 3. 拟真提示音引擎 (Web Audio API 双音节合成)
+    // 3. 拟真提示音引擎 (Web Audio API 合成双音节，零外部依赖，100% 播放)
     let sharedAudioCtx = null;
     function playNotificationSound() {
       try {
@@ -1652,7 +1655,7 @@
       } catch (e) { }
     }
 
-    // 4. 网页后台闪烁提醒
+    // 4. 网页标题后台闪烁提醒
     function startTitleBlink(senderName) {
       if (document.visibilityState === 'visible') return;
       if (titleBlinkInterval) clearInterval(titleBlinkInterval);
@@ -1673,7 +1676,7 @@
       }
     });
 
-    // 5. 前台与前置本地通知调度引擎
+    // 5. 🌟 核心：全平台系统级本地与远程通知派发引擎
     async function triggerSystemNotification(title, body, icon = currentUser.avatar) {
       playNotificationSound();
       startTitleBlink(title);
@@ -1683,10 +1686,10 @@
 
       const notificationOptions = {
         body: body,
-        icon: icon || '/icon-web.png',
-        badge: '/icon-web.png',
-        tag: `msg_${Date.now()}_${Math.random()}`,
-        renotify: true,
+        icon: icon || '/icon.png',
+        badge: '/icon.png',
+        tag: `msg_${Date.now()}_${Math.random()}`, // 唯一标识，防止多条消息被浏览器静默覆盖
+        renotify: true, // 强制每次连续消息都重新弹出提醒并震动
         vibrate: [200, 100, 200],
         data: { url: window.location.href }
       };
@@ -1705,14 +1708,15 @@
       }
     }
 
+    // 测试通知按钮
     async function testNotificationAction() {
       if (Notification.permission !== 'granted') {
         await initWebPush(true);
       }
-      await triggerSystemNotification("系统通知测试", "这是一条测试提醒！", currentUser.avatar);
+      await triggerSystemNotification("系统通知测试", "这是一条测试信息！", currentUser.avatar);
     }
 
-    // 6. Web Push 注册与订阅绑定
+    // 6. WebPush 注册与状态检测
     function urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
       const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
@@ -1726,33 +1730,28 @@
 
     async function initWebPush(isManual = false) {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        const statusEl = document.getElementById('pushStatus');
-        if (statusEl) statusEl.innerText = '当前浏览器不支持推送';
+        document.getElementById('pushStatus').innerText = '当前环境不支持推送';
         return;
       }
 
       if (Notification.permission === 'denied') {
-        const statusEl = document.getElementById('pushStatus');
-        if (statusEl) statusEl.innerText = '通知权限已被系统拒绝';
+        document.getElementById('pushStatus').innerText = '通知权限已被系统拒绝';
         return;
       }
 
       if (Notification.permission === 'default' && isManual) {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-          const statusEl = document.getElementById('pushStatus');
-          if (statusEl) statusEl.innerText = '未授权通知';
+          document.getElementById('pushStatus').innerText = '未授权通知';
           return;
         }
       }
 
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
-        await navigator.serviceWorker.ready;
-
         let subscription = await registration.pushManager.getSubscription();
 
-        if (!subscription && (isManual || Notification.permission === 'granted')) {
+        if (!subscription && isManual) {
           subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -1760,50 +1759,40 @@
         }
 
         if (Notification.permission === 'granted') {
-          const statusEl = document.getElementById('pushStatus');
-          if (statusEl) statusEl.innerText = '已启用 (支持关闭网页离线推送)';
-          const enableBtn = document.getElementById('enablePushBtn');
-          if (enableBtn) enableBtn.style.display = 'none';
+          document.getElementById('pushStatus').innerText = '已启用 (支持离线推送)';
+          document.getElementById('enablePushBtn').style.display = 'none';
         }
 
-        // 绑定设备订阅到 Cloudflare Worker
-        if (subscription && currentUser.name && PUSH_SERVER_URL) {
-          await fetch(`${PUSH_SERVER_URL}/api/subscribe`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              username: currentUser.name,
-              subscription: subscription.toJSON()
-            })
-          });
-          console.log('[WebPush] 设备离线推送就绪:', currentUser.name);
+        if (subscription && sbClient && currentUser.name) {
+          const subJson = subscription.toJSON();
+          const { data: existing } = await sbClient.from('user_subscriptions').select('id').eq('user_id', currentUser.name).eq('endpoint', subscription.endpoint).maybeSingle();
+          if (existing) {
+            await sbClient.from('user_subscriptions').update({ subscription: subJson, updated_at: new Date().toISOString() }).eq('id', existing.id);
+          } else {
+            await sbClient.from('user_subscriptions').insert({ user_id: currentUser.name, subscription: subJson, updated_at: new Date().toISOString() });
+          }
         }
       } catch (err) {
-        console.warn('[WebPush] 订阅异常:', err);
+        console.warn("WebPush 初始化提示:", err);
       }
     }
 
-    // 唤起离线接收方的 Web Push
     async function triggerWebPushNotification(targetUser, title, body, url = "/", icon = currentUser.avatar) {
-      if (!PUSH_SERVER_URL || !targetUser) return;
       try {
-        await fetch(`${PUSH_SERVER_URL}/api/send-notification`, {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            target_user: targetUser,
-            title: title || `${currentUser.name}`,
-            body: body || '发来了一条新消息',
-            icon: icon || currentUser.avatar || '/icon-web.png',
-            url: url || '/'
-          })
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ target_user: targetUser, title, body, icon, url })
         });
+        if (!res.ok) {
+          console.warn("Edge Function 返回异常状态:", res.status);
+        }
       } catch (err) {
-        console.warn('[WebPush] 调用推送失败:', err);
+        console.warn("调用 Edge Function 推送接口失败:", err);
       }
     }
 
-    // 7. 用户与数据初始化
+    // 7. 用户初始化
     async function initUserInfo() {
       try {
         const res = await fetch("/api/userinfo");
@@ -1824,7 +1813,7 @@
       } catch (e) {
         let guestName = localStorage.getItem("MD3_GUEST_UNAME");
         if (!guestName) {
-          guestName = `橙子_${Math.floor(1000 + Math.random() * 9000)}`;
+          guestName = `橙子_${Math.floor(Math.random() * 1000)}`;
           localStorage.setItem("MD3_GUEST_UNAME", guestName);
         }
         currentUser = {
@@ -1840,7 +1829,6 @@
       document.getElementById("myAvatarImg").src = currentUser.avatar;
       document.getElementById("cardAvatar").src = currentUser.avatar;
       document.getElementById("cardName").innerText = currentUser.name;
-      document.getElementById("setUname").innerText = currentUser.name;
 
       loadContacts();
       await loadFriendRequests();
@@ -1855,7 +1843,7 @@
       return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username || 'user')}`;
     }
 
-    // 8. 联系人与会话管理
+    // 8. 联系人列表管理
     function loadContacts() {
       const storageKey = `MD3_CONTACTS_${currentUser.name}`;
       const saved = localStorage.getItem(storageKey);
@@ -2024,7 +2012,7 @@
       document.getElementById("stageContainer").classList.remove("mobile-active");
     }
 
-    // 9. 聊天设置与详情
+    // 9. 聊天详情与设置
     function openChatDetailModal() {
       const contact = contacts.find(c => c.id === activeChatId);
       if (!contact) return;
@@ -2056,7 +2044,7 @@
     }
 
     async function clearCurrentChatHistory() {
-      if (!confirm(`确定要清空与「${activeChatId}」的聊天记录吗？`)) return;
+      if (!confirm(`确定要清空与「${activeChatId}」的聊天记录吗？此操作无法撤销。`)) return;
 
       const clearKey = `CLEAR_TS_${currentUser.name}_${activeChatId}`;
       localStorage.setItem(clearKey, Date.now().toString());
@@ -2082,7 +2070,7 @@
       closeModal("chatDetailModalWrapper");
     }
 
-    // 10. 聊天记录搜索
+    // 10. 查找聊天记录功能
     function openSearchHistoryModal() {
       const contact = contacts.find(c => c.id === activeChatId);
       document.getElementById("historyWinTitle").innerText = `与“${contact?.name || activeChatId}”的聊天记录`;
@@ -2282,7 +2270,7 @@
       }, 200);
     }
 
-    // 11. 好友右键菜单
+    // 11. 好友右键菜单 & 双向解除
     function openFriendContextMenu(e, contactId) {
       if (window.innerWidth <= 768) return;
       e.preventDefault();
@@ -2348,7 +2336,7 @@
         return;
       }
       const targetId = contextTargetContactId;
-      if (confirm(`确定要删除联系人「${targetId}」吗？`)) {
+      if (confirm(`确定要删除联系人「${targetId}」吗？此操作无法撤销。`)) {
         contacts = contacts.filter(c => c.id !== targetId);
         friendRequests = friendRequests.filter(r => !((r.sender_id === currentUser.name && r.receiver_id === targetId) || (r.sender_id === targetId && r.receiver_id === currentUser.name)));
         saveContacts();
@@ -2409,7 +2397,7 @@
       renderPopoutMessages();
     }
 
-    // 12. 消息操作
+    // 12. 消息右键 & 引用撤回
     function openMessageContextMenu(e, msg) {
       if (window.innerWidth <= 768) return;
       e.preventDefault();
@@ -2781,7 +2769,7 @@
       } catch (e) { }
     }
 
-    // 14. 消息收发 & 实时同步
+    // 14. 消息收发与实时订阅 (集成系统通知)
     async function loadMessagesForActiveChat() {
       const container = document.getElementById("messagesViewport");
       container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:12px;">加载中...</div>`;
@@ -2930,6 +2918,7 @@
             const isFriend = contacts.some(c => c.id === msg.sender_id);
             if (!isFriend && msg.sender_id !== currentUser.name) return;
 
+            const isWindowFocused = document.hasFocus && document.hasFocus();
             const isCurrentlyActive = (activeChatId === msg.sender_id && document.visibilityState === 'visible');
 
             const contact = contacts.find(c => c.id === msg.sender_id);
@@ -2941,6 +2930,7 @@
               saveContacts();
               renderCurrentTabList();
 
+              // 🌟 收到消息，且未免打扰、且用户未在当前激活窗口时：立即触发系统通知和声音
               if (!contact.isMuted && !isCurrentlyActive) {
                 const noticeBody = msg.msg_type === 'text' ? msg.content : `[${msg.msg_type}]`;
                 triggerSystemNotification(contact.name || msg.sender_id, noticeBody, contact.avatar);
@@ -3017,7 +3007,7 @@
         .subscribe();
     }
 
-    // 15. 文件上传与表情
+    // 15. 文件处理
     function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -3042,7 +3032,7 @@
       input.focus();
     }
 
-    // 16. 弹窗拖拽系统
+    // 16. 窗口自由拖拽
     let dragState = { isDragging: false, currentEl: null, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 };
 
     function startDrag(e, elementId) {
