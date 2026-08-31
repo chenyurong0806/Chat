@@ -1584,8 +1584,8 @@
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
           <button class="btn-tonal" onclick="testNotificationAction()"><span class="material-symbols-outlined"
-              style="font-size:16px;">notifications_active</span>测试发送通知</button>
-          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启通知权限</button>
+              style="font-size:16px;">notifications_active</span>测试通知</button>
+          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启通知</button>
           <button class="btn-text" onclick="closeModal('settingsModalWrapper')">完成</button>
         </div>
       </div>
@@ -1709,7 +1709,7 @@
       if (Notification.permission !== 'granted') {
         await initWebPush(true);
       }
-      await triggerSystemNotification("系统通知测试", "这是一条即时消息提醒测试，您的通知通道已就绪！", currentUser.avatar);
+      await triggerSystemNotification("系统通知测试", "这是一条测试信息！", currentUser.avatar);
     }
 
     // 6. WebPush 注册与状态检测
@@ -2040,7 +2040,7 @@
     }
 
     async function clearCurrentChatHistory() {
-      if (!confirm(`确定要清空与「${activeChatId}」的聊天记录吗？此操作仅清除你的本地查看记录，不会影响对方。`)) return;
+      if (!confirm(`确定要清空与「${activeChatId}」的聊天记录吗？此操作无法撤销。`)) return;
 
       const clearKey = `CLEAR_TS_${currentUser.name}_${activeChatId}`;
       localStorage.setItem(clearKey, Date.now().toString());
@@ -2332,7 +2332,7 @@
         return;
       }
       const targetId = contextTargetContactId;
-      if (confirm(`确定要删除好友「${targetId}」吗？双方通讯录都将解除。`)) {
+      if (confirm(`确定要删除联系人「${targetId}」吗？此操作无法撤销。`)) {
         contacts = contacts.filter(c => c.id !== targetId);
         friendRequests = friendRequests.filter(r => !((r.sender_id === currentUser.name && r.receiver_id === targetId) || (r.sender_id === targetId && r.receiver_id === currentUser.name)));
         saveContacts();
