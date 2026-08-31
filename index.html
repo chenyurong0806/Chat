@@ -5,18 +5,25 @@
   <meta charset="UTF-8">
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>MD3 Cloud Chat</title>
+  <title>WeChat</title>
 
   <!-- PWA & Web App 配置 -->
-  <link rel="icon" type="image/png" href="/icon.png">
-  <link rel="apple-touch-icon" href="/icon.png">
+  <!-- 网页端 Favicon 图标 -->
+  <link rel="icon" type="image/png" href="/icon-web.png">
+
+  <!-- iOS 添加到主屏幕图标 -->
+  <link rel="apple-touch-icon" href="/icon-apple.png">
+
+  <!-- Web App 与状态栏设置 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="MD3 Chat">
-  <meta name="theme-color" content="#f4fbf7" media="(prefers-color-scheme: light)">
+  <meta name="apple-mobile-web-app-title" content="WeChat">
+  <meta name="theme-color" content="#f2f5f1" media="(prefers-color-scheme: light)">
+
+  <!-- Web Manifest 配置 -->
   <link rel="manifest"
-    href='data:application/manifest+json,{"name":"MD3 Cloud Chat","short_name":"MD3 Chat","start_url":"/","display":"standalone","background_color":"%23f4fbf7","theme_color":"%23006a60","icons":[{"src":"/icon.png","sizes":"512x512","type":"image/png"}]}'>
+    href='data:application/manifest+json,{"name":"WeChat","short_name":"WeChat","start_url":"/","display":"standalone","background_color":"%23f2f5f1","theme_color":"%23006a60","icons":[{"src":"/icon-web.png","sizes":"512x512","type":"image/png"}]}'>
 
   <!-- Google Fonts & Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,19 +54,19 @@
       --md-sys-color-secondary-container: #cce8e2;
       --md-sys-color-on-secondary-container: #05201c;
       --md-sys-color-error: #ba1a1a;
-      --md-sys-color-on-error: #ffffff;
       --md-sys-color-error-container: #ffdad6;
+      --md-sys-color-on-error: #ffffff;
       --md-sys-color-on-error-container: #410002;
 
       --md-shape-corner-small: 8px;
-      --md-shape-corner-medium: 16px;
+      --md-shape-corner-medium: 14px;
       --md-shape-corner-large: 24px;
       --md-shape-corner-full: 9999px;
 
       --md-elevation-1: 0 1px 3px 1px rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.12);
       --md-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.10), 0 1px 2px 0 rgba(0, 0, 0, 0.18);
       --md-elevation-3: 0 4px 12px 3px rgba(0, 0, 0, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.20);
-      --md-elevation-floating: 0 10px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+      --md-elevation-floating: 0 10px 32px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
 
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -86,6 +93,21 @@
       color: var(--md-sys-color-on-surface);
     }
 
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined' !important;
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      vertical-align: middle;
+    }
+
     .app-viewport {
       width: 100vw;
       height: 100vh;
@@ -95,7 +117,7 @@
       background: var(--md-sys-color-surface);
     }
 
-    /* 1. 桌面侧边导航 Rail */
+    /* 1. 导航 Rail */
     .nav-rail {
       width: 72px;
       height: 100%;
@@ -180,7 +202,7 @@
       flex: 1;
     }
 
-    /* 2. 会话列表栏 */
+    /* 2. 侧边栏列表 */
     .chat-sidebar {
       width: 320px;
       height: 100%;
@@ -348,7 +370,7 @@
       text-overflow: ellipsis;
     }
 
-    /* 3. 聊天主工作舞台 */
+    /* 3. 聊天主舞台 */
     .stage-container {
       flex: 1;
       height: 100%;
@@ -393,6 +415,7 @@
       flex-direction: column;
       gap: 16px;
       background: var(--md-sys-color-surface-container-lowest);
+      scroll-behavior: smooth;
     }
 
     .message-row {
@@ -401,6 +424,26 @@
       max-width: 78%;
       user-select: text;
       position: relative;
+      transition: background 0.4s ease;
+    }
+
+    .message-row.highlighted {
+      animation: highlightFlash 1.5s ease;
+    }
+
+    @keyframes highlightFlash {
+      0% {
+        background: transparent;
+      }
+
+      30% {
+        background: var(--md-sys-color-primary-container);
+        border-radius: 12px;
+      }
+
+      100% {
+        background: transparent;
+      }
     }
 
     .message-row.sent {
@@ -609,7 +652,7 @@
       align-items: center;
     }
 
-    /* 4. MD3 Switch 规范开关 */
+    /* 4. MD3 Switch 开关 */
     .md3-switch {
       position: relative;
       display: inline-block;
@@ -660,7 +703,7 @@
       bottom: 2px;
     }
 
-    /* 5. 菜单与弹窗系统 (MD3 规范) */
+    /* 5. 弹窗与菜单系统 */
     .md3-context-menu {
       position: fixed;
       display: none;
@@ -721,8 +764,8 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: transparent;
-      pointer-events: none;
+      background: rgba(0, 0, 0, 0.2);
+      pointer-events: auto;
       display: none;
       z-index: 1000;
     }
@@ -740,12 +783,11 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      pointer-events: auto;
     }
 
     .window-header-drag {
       padding: 8px 16px;
-      height: 48px;
+      height: 52px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -755,12 +797,13 @@
       font-weight: 600;
       font-size: 14px;
       color: var(--md-sys-color-on-surface);
+      flex-shrink: 0;
     }
 
     .window-content {
       padding: 16px 20px;
       overflow-y: auto;
-      max-height: calc(85vh - 48px);
+      max-height: calc(85vh - 52px);
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -831,55 +874,253 @@
       height: 40px;
     }
 
+    /* 6. MD3 按钮体系 (严格对齐规范) */
     .btn-filled {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
       border: none;
-      padding: 8px 18px;
+      height: 40px;
+      padding: 0 20px;
       border-radius: var(--md-shape-corner-full);
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 500;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
+      transition: box-shadow 0.2s;
+    }
+
+    .btn-filled:hover {
+      box-shadow: var(--md-elevation-1);
     }
 
     .btn-tonal {
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
       border: none;
-      padding: 8px 16px;
+      height: 40px;
+      padding: 0 18px;
       border-radius: var(--md-shape-corner-full);
       cursor: pointer;
       font-weight: 500;
-      font-size: 13px;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-tonal:hover {
+      filter: brightness(0.96);
     }
 
     .btn-text {
       background: transparent;
       border: none;
-      padding: 8px 14px;
+      height: 40px;
+      padding: 0 16px;
       color: var(--md-sys-color-primary);
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .btn-danger {
       background: var(--md-sys-color-error-container);
       color: var(--md-sys-color-error);
       border: none;
-      padding: 8px 16px;
+      height: 40px;
+      padding: 0 18px;
       border-radius: var(--md-shape-corner-full);
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 500;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
+      transition: filter 0.2s;
+    }
+
+    .btn-danger:hover {
+      filter: brightness(0.96);
+    }
+
+    .btn-locate {
+      color: var(--md-sys-color-primary);
+      font-size: 12px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      font-weight: 500;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .btn-locate:hover {
+      text-decoration: underline;
+    }
+
+    /* 7. 查找聊天记录组件体系 (仿微信全功能) */
+    .history-tabs-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      padding: 0 16px;
+      background: var(--md-sys-color-surface);
+      flex-shrink: 0;
+    }
+
+    .history-tab-btn {
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .history-tab-btn.active {
+      color: var(--md-sys-color-primary);
+      border-bottom: 2px solid var(--md-sys-color-primary);
+    }
+
+    .history-search-bar {
+      display: flex;
+      align-items: center;
+      background: var(--md-sys-color-surface-container-highest);
+      border-radius: var(--md-shape-corner-small);
+      padding: 4px 10px;
+      margin: 12px 16px 4px 16px;
+      gap: 8px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .filter-chip {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: var(--md-shape-corner-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .filter-chip-close {
+      cursor: pointer;
+      font-size: 14px !important;
+    }
+
+    .history-search-input {
+      border: none;
+      background: transparent;
+      outline: none;
+      flex: 1;
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface);
+      height: 28px;
+    }
+
+    .history-results-viewport {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* 历史记录各项样式 */
+    .history-msg-item {
+      display: flex;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--md-sys-color-surface-container-high);
+    }
+
+    .history-msg-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .history-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .history-file-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--md-sys-color-surface-container-low);
+      border-radius: var(--md-shape-corner-small);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      margin-top: 4px;
+    }
+
+    .history-file-badge {
+      width: 36px;
+      height: 42px;
+      background: #e53935;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .media-month-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface);
+      margin: 12px 0 6px 0;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
       gap: 6px;
+    }
+
+    .media-grid-item {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--md-sys-color-surface-container-highest);
+      cursor: pointer;
+    }
+
+    .media-grid-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     #fileInput,
@@ -887,7 +1128,7 @@
       display: none;
     }
 
-    /* 6. 移动端与全面屏 PWA 适配 */
+    /* 8. 移动端与全屏 PWA 适配 */
     @media (max-width: 768px) {
       .app-viewport {
         flex-direction: column-reverse;
@@ -966,7 +1207,6 @@
         padding-bottom: calc(10px + var(--safe-bottom));
       }
 
-      /* 移动端全屏弹窗与详情覆盖层 */
       .draggable-modal-wrapper.mobile-fullscreen .md3-window {
         position: fixed !important;
         top: 0 !important;
@@ -987,6 +1227,10 @@
       .draggable-modal-wrapper.mobile-fullscreen .window-content {
         max-height: calc(100dvh - 56px - var(--safe-top) - var(--safe-bottom));
         padding-bottom: calc(20px + var(--safe-bottom));
+      }
+
+      .media-grid {
+        grid-template-columns: repeat(3, 1fr);
       }
 
       .md3-window {
@@ -1086,7 +1330,7 @@
 
           <div style="display:flex; justify-content:flex-end;">
             <button class="btn-filled" onclick="sendMessage()"><span class="material-symbols-outlined"
-                style="font-size:16px;">send</span>发送</button>
+                style="font-size:18px;">send</span>发送</button>
           </div>
         </div>
       </div>
@@ -1123,7 +1367,7 @@
   <div class="draggable-modal-wrapper mobile-fullscreen" id="chatDetailModalWrapper">
     <div class="md3-window" id="chatDetailWin" style="width: 380px; top: 10%; left: 32%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'chatDetailWin')">
-        <span>聊天详情</span>
+        <span>聊天信息</span>
         <button class="icon-btn" onclick="closeModal('chatDetailModalWrapper')"><span
             class="material-symbols-outlined">close</span></button>
       </div>
@@ -1141,7 +1385,7 @@
         <div class="setting-row" onclick="openSearchHistoryModal()">
           <div class="setting-row-left">
             <div class="setting-label">查找聊天记录</div>
-            <div class="setting-sub">搜索文本、文件等历史消息</div>
+            <div class="setting-sub">图片、视频、文件、链接等</div>
           </div>
           <span class="material-symbols-outlined"
             style="color:var(--md-sys-color-outline); font-size:20px;">chevron_right</span>
@@ -1150,7 +1394,7 @@
         <div class="setting-row">
           <div class="setting-row-left">
             <div class="setting-label">消息免打扰</div>
-            <div class="setting-sub">静音该会话的推送提醒</div>
+            <div class="setting-sub">静音该会话的通知提醒</div>
           </div>
           <label class="md3-switch">
             <input type="checkbox" id="detailMuteSwitch" onchange="toggleMuteFromDetail()">
@@ -1169,35 +1413,49 @@
           </label>
         </div>
 
-        <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+        <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
           <button class="btn-tonal" style="width:100%;" onclick="clearCurrentChatHistory()"><span
-              class="material-symbols-outlined" style="font-size:16px;">delete_sweep</span>清空聊天记录</button>
+              class="material-symbols-outlined">delete_sweep</span><span>清空聊天记录</span></button>
           <button class="btn-danger" style="width:100%;" onclick="deleteContactFromDetail()"><span
-              class="material-symbols-outlined" style="font-size:16px;">person_remove</span>删除联系人</button>
+              class="material-symbols-outlined">person_remove</span><span>删除联系人</span></button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 弹窗/页面：查找聊天记录 (Search Message History) -->
+  <!-- 弹窗/页面：与“XXX”的聊天记录 (Search History & Filter Tabs) -->
   <div class="draggable-modal-wrapper mobile-fullscreen" id="searchHistoryModalWrapper">
-    <div class="md3-window" id="searchHistoryWin" style="width: 420px; height: 560px; top: 12%; left: 30%;">
+    <div class="md3-window" id="searchHistoryWin"
+      style="width: 500px; height: 600px; top: 8%; left: 28%; display:flex; flex-direction:column;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'searchHistoryWin')">
-        <span>查找聊天内容</span>
+        <span id="historyWinTitle">与联系人的聊天记录</span>
         <button class="icon-btn" onclick="closeModal('searchHistoryModalWrapper')"><span
             class="material-symbols-outlined">close</span></button>
       </div>
-      <div class="window-content" style="flex:1; padding:12px 16px;">
-        <div class="search-box" style="height:38px;">
-          <span class="material-symbols-outlined" style="font-size:18px;">search</span>
-          <input type="text" id="searchMsgInput" placeholder="输入搜索关键词..." oninput="doSearchMessageHistory()">
-        </div>
-        <div id="searchMsgResultsContainer"
-          style="flex:1; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:6px;">
-          <div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:30px;">输入关键词检索历史内容
-          </div>
-        </div>
+
+      <!-- 搜索栏 -->
+      <div class="history-search-bar">
+        <span id="historyFilterChip" class="filter-chip" style="display:none;">
+          <span class="material-symbols-outlined" id="historyFilterIcon" style="font-size:14px;">folder</span>
+          <span id="historyFilterText">文件</span>
+          <span class="material-symbols-outlined filter-chip-close" onclick="clearHistoryFilter(event)">close</span>
+        </span>
+        <span class="material-symbols-outlined" style="font-size: 18px; opacity:0.6;">search</span>
+        <input type="text" class="history-search-input" id="historySearchInput" placeholder="搜索"
+          oninput="renderHistoryView()">
       </div>
+
+      <!-- 分类标签页 -->
+      <div class="history-tabs-container">
+        <button class="history-tab-btn active" onclick="switchHistoryTab('all')">全部</button>
+        <button class="history-tab-btn" onclick="switchHistoryTab('file')">文件</button>
+        <button class="history-tab-btn" onclick="switchHistoryTab('image')">图片与视频</button>
+        <button class="history-tab-btn" onclick="switchHistoryTab('link')">链接</button>
+        <button class="history-tab-btn" onclick="switchHistoryTab('date')">日期</button>
+      </div>
+
+      <!-- 内容展示列表 -->
+      <div class="history-results-viewport" id="historyResultsContainer"></div>
     </div>
   </div>
 
@@ -1209,7 +1467,7 @@
         <button class="icon-btn" onclick="closeModal('popoutChatModalWrapper')"><span
             class="material-symbols-outlined">close</span></button>
       </div>
-      <div style="flex:1; display:flex; flex-direction:column; height:calc(100% - 48px);">
+      <div style="flex:1; display:flex; flex-direction:column; height:calc(100% - 52px);">
         <div class="messages-viewport" id="popoutMessagesViewport" style="flex:1;"></div>
         <div class="chat-input-area" style="padding:8px 14px;">
           <div style="display:flex; gap:6px;">
@@ -1302,7 +1560,7 @@
           </div>
           <div>
             <div style="font-size:16px; font-weight:600;"><span id="cardName">--</span></div>
-            <div style="font-size:12px; color:var(--md-sys-color-outline);">已登录用户</div>
+            <div style="font-size:12px; color:var(--md-sys-color-outline);">已登录账号</div>
           </div>
         </div>
 
@@ -1355,6 +1613,10 @@
     let contextTargetContactId = null;
     let contextTargetMsg = null;
     let currentQuoteData = null;
+
+    // 查找记录状态
+    let historyActiveTab = "all";
+    let historyFilter = null; // null | 'file' | 'image' | 'link'
 
     // 3. WebPush
     function urlBase64ToUint8Array(base64String) {
@@ -1638,7 +1900,7 @@
       document.getElementById("stageContainer").classList.remove("mobile-active");
     }
 
-    // 6. 聊天详情与设置 (Chat Detail / Settings)
+    // 6. 聊天详情与设置
     function openChatDetailModal() {
       const contact = contacts.find(c => c.id === activeChatId);
       if (!contact) return;
@@ -1669,8 +1931,12 @@
       renderCurrentTabList();
     }
 
+    // 🌟 修复：清空聊天记录只影响自己（本地持久化记录清空时间截点，不物理删除对方数据库记录）
     async function clearCurrentChatHistory() {
-      if (!confirm(`确定要清空与「${activeChatId}」的全部聊天记录吗？此操作无法撤销。`)) return;
+      if (!confirm(`确定要清空与「${activeChatId}」的聊天记录吗？此操作仅清除你的本地查看记录，不会影响对方。`)) return;
+
+      const clearKey = `CLEAR_TS_${currentUser.name}_${activeChatId}`;
+      localStorage.setItem(clearKey, Date.now().toString());
 
       currentChatMessages = [];
       renderMessages();
@@ -1684,15 +1950,6 @@
       }
 
       localStorage.removeItem(`MSGS_${currentUser.name}_${activeChatId}`);
-
-      try {
-        if (sbClient) {
-          await sbClient.from('messages')
-            .delete()
-            .or(`and(sender_id.eq.${currentUser.name},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.name})`);
-        }
-      } catch (e) { }
-
       closeModal("chatDetailModalWrapper");
     }
 
@@ -1702,53 +1959,209 @@
       closeModal("chatDetailModalWrapper");
     }
 
-    // 7. 查找聊天记录功能 (Search History)
+    // 7. 查找聊天记录功能 (全功能仿微信)
     function openSearchHistoryModal() {
-      document.getElementById("searchMsgInput").value = "";
-      document.getElementById("searchMsgResultsContainer").innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:30px;">输入关键词检索历史内容</div>`;
+      const contact = contacts.find(c => c.id === activeChatId);
+      document.getElementById("historyWinTitle").innerText = `与“${contact?.name || activeChatId}”的聊天记录`;
+      document.getElementById("historySearchInput").value = "";
+      historyActiveTab = "all";
+      historyFilter = null;
+      updateFilterChipUI();
+      updateTabButtonsUI();
+      renderHistoryView();
       openModal("searchHistoryModalWrapper");
     }
 
-    function doSearchMessageHistory() {
-      const keyword = document.getElementById("searchMsgInput").value.trim().toLowerCase();
-      const container = document.getElementById("searchMsgResultsContainer");
+    function switchHistoryTab(tab) {
+      historyActiveTab = tab;
+      if (tab === 'file') historyFilter = 'file';
+      else if (tab === 'image') historyFilter = 'image';
+      else if (tab === 'link') historyFilter = 'link';
+      else if (tab === 'all') historyFilter = null;
+
+      updateFilterChipUI();
+      updateTabButtonsUI();
+      renderHistoryView();
+    }
+
+    function clearHistoryFilter(e) {
+      e.stopPropagation();
+      historyFilter = null;
+      historyActiveTab = "all";
+      updateFilterChipUI();
+      updateTabButtonsUI();
+      renderHistoryView();
+    }
+
+    function updateFilterChipUI() {
+      const chip = document.getElementById("historyFilterChip");
+      const icon = document.getElementById("historyFilterIcon");
+      const text = document.getElementById("historyFilterText");
+
+      if (historyFilter) {
+        chip.style.display = "inline-flex";
+        if (historyFilter === 'file') {
+          icon.innerText = "folder";
+          text.innerText = "文件";
+        } else if (historyFilter === 'image') {
+          icon.innerText = "image";
+          text.innerText = "图片与视频";
+        } else if (historyFilter === 'link') {
+          icon.innerText = "link";
+          text.innerText = "链接";
+        }
+      } else {
+        chip.style.display = "none";
+      }
+    }
+
+    function updateTabButtonsUI() {
+      document.querySelectorAll(".history-tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.innerText.includes(getTabName(historyActiveTab)));
+      });
+    }
+
+    function getTabName(tab) {
+      switch (tab) {
+        case 'file': return '文件';
+        case 'image': return '图片';
+        case 'link': return '链接';
+        case 'date': return '日期';
+        default: return '全部';
+      }
+    }
+
+    function renderHistoryView() {
+      const container = document.getElementById("historyResultsContainer");
+      const keyword = document.getElementById("historySearchInput").value.trim().toLowerCase();
       container.innerHTML = "";
 
-      if (!keyword) {
-        container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:30px;">输入关键词检索历史内容</div>`;
+      let filtered = currentChatMessages.filter(m => !m.is_recalled);
+
+      // 按类型过滤
+      if (historyFilter === 'file') {
+        filtered = filtered.filter(m => m.msg_type === 'file');
+      } else if (historyFilter === 'image') {
+        filtered = filtered.filter(m => m.msg_type === 'image');
+      } else if (historyFilter === 'link') {
+        filtered = filtered.filter(m => m.msg_type === 'text' && /(https?:\/\/[^\s]+)/g.test(m.content));
+      }
+
+      // 按关键词检索
+      if (keyword) {
+        filtered = filtered.filter(m => {
+          if (m.msg_type === 'text') return m.content.toLowerCase().includes(keyword);
+          if (m.msg_type === 'file') return (m.file_name || "").toLowerCase().includes(keyword);
+          return false;
+        });
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:40px;">暂无相关记录</div>`;
         return;
       }
 
-      const matched = currentChatMessages.filter(m => !m.is_recalled && (
-        (m.content && m.content.toLowerCase().includes(keyword)) ||
-        (m.file_name && m.file_name.toLowerCase().includes(keyword))
-      ));
-
-      if (matched.length === 0) {
-        container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:30px;">没有找到匹配的消息记录</div>`;
+      // 图片视图按月份分组
+      if (historyActiveTab === 'image' || (historyFilter === 'image' && !keyword)) {
+        renderImageGridView(container, filtered);
         return;
       }
 
-      matched.forEach(msg => {
+      // 常规混合/文件/链接列表展示
+      filtered.forEach(msg => {
         const item = document.createElement("div");
-        item.style.cssText = "background:var(--md-sys-color-surface-container-low); padding:10px 12px; border-radius:12px; display:flex; flex-direction:column; gap:4px; cursor:pointer;";
-        item.onclick = () => {
-          closeModal("searchHistoryModalWrapper");
-          closeModal("chatDetailModalWrapper");
-        };
+        item.className = "history-msg-item";
 
-        const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleString() : "";
+        const senderAvatar = msg.sender_id === currentUser.name ? currentUser.avatar : (contacts.find(c => c.id === msg.sender_id)?.avatar);
+        const avatarUrl = getAvatarUrl(senderAvatar, msg.sender_id);
+        const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : "";
+
+        let bodyHtml = "";
+        if (msg.msg_type === 'text') {
+          bodyHtml = `<div style="font-size:13px; color:var(--md-sys-color-on-surface); line-height:1.4; word-break:break-word;">${msg.content}</div>`;
+        } else if (msg.msg_type === 'file') {
+          bodyHtml = `
+            <div class="history-file-card">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div class="history-file-badge">${(msg.file_name || 'DOC').split('.').pop()}</div>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">${msg.file_name}</div>
+                  <div style="font-size:11px; color:var(--md-sys-color-outline);">${msg.file_size || '未知大小'}</div>
+                </div>
+              </div>
+              <a href="${msg.file_url}" download="${msg.file_name}" class="btn-text" style="height:28px; padding:0 8px; font-size:12px;">下载</a>
+            </div>`;
+        } else if (msg.msg_type === 'image') {
+          bodyHtml = `<img src="${msg.file_url}" style="width:100px; height:100px; border-radius:8px; object-fit:cover; margin-top:4px; cursor:pointer;" onclick="window.open('${msg.file_url}')">`;
+        }
+
         item.innerHTML = `
-          <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--md-sys-color-primary); font-weight:600;">
-            <span>${msg.sender_id}</span>
-            <span style="font-size:11px; color:var(--md-sys-color-outline); font-weight:normal;">${timeStr}</span>
-          </div>
-          <div style="font-size:13px; color:var(--md-sys-color-on-surface); word-break:break-word;">
-            ${msg.msg_type === 'text' ? msg.content : (msg.file_name || `[${msg.msg_type}]`)}
+          <div class="history-avatar"><img src="${avatarUrl}"></div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px;">
+              <span style="font-size:13px; font-weight:600; color:var(--md-sys-color-on-surface);">${msg.sender_id}</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11px; color:var(--md-sys-color-outline);">${timeStr}</span>
+                <button class="btn-locate" onclick="locateMessageInChat('${msg.id || msg.created_at}')">定位到聊天位置</button>
+              </div>
+            </div>
+            ${bodyHtml}
           </div>
         `;
         container.appendChild(item);
       });
+    }
+
+    function renderImageGridView(container, list) {
+      const groups = {};
+      list.forEach(m => {
+        const d = new Date(m.created_at || Date.now());
+        const monthKey = `${d.getFullYear()}年${d.getMonth() + 1}月`;
+        if (!groups[monthKey]) groups[monthKey] = [];
+        groups[monthKey].push(m);
+      });
+
+      for (const [month, items] of Object.entries(groups)) {
+        const title = document.createElement("div");
+        title.className = "media-month-title";
+        title.innerText = month;
+        container.appendChild(title);
+
+        const grid = document.createElement("div");
+        grid.className = "media-grid";
+
+        items.forEach(imgMsg => {
+          const gridItem = document.createElement("div");
+          gridItem.className = "media-grid-item";
+          gridItem.innerHTML = `<img src="${imgMsg.file_url}" loading="lazy">`;
+          gridItem.onclick = () => window.open(imgMsg.file_url);
+          grid.appendChild(gridItem);
+        });
+
+        container.appendChild(grid);
+      }
+    }
+
+    // 定位到聊天主窗口消息位置并高亮闪烁
+    function locateMessageInChat(msgIdentifier) {
+      closeModal('searchHistoryModalWrapper');
+      closeModal('chatDetailModalWrapper');
+      if (window.innerWidth <= 768) openMobileChat();
+
+      setTimeout(() => {
+        const rows = document.querySelectorAll("#messagesViewport .message-row");
+        let targetEl = null;
+        rows.forEach(r => {
+          if (r.dataset.id === msgIdentifier) targetEl = r;
+        });
+
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          targetEl.classList.remove("highlighted");
+          void targetEl.offsetWidth; // 触发重绘
+          targetEl.classList.add("highlighted");
+        }
+      }, 200);
     }
 
     // 8. 好友右键菜单 & 双向解除
@@ -1817,7 +2230,7 @@
         return;
       }
       const targetId = contextTargetContactId;
-      if (confirm(`确定要删除好友「${targetId}」吗？双方通讯录都将移除。`)) {
+      if (confirm(`确定要删除好友「${targetId}」吗？双方通讯录都将解除。`)) {
         contacts = contacts.filter(c => c.id !== targetId);
         friendRequests = friendRequests.filter(r => !((r.sender_id === currentUser.name && r.receiver_id === targetId) || (r.sender_id === targetId && r.receiver_id === currentUser.name)));
         saveContacts();
@@ -2264,7 +2677,16 @@
           .order('created_at', { ascending: true });
 
         if (error) throw error;
-        currentChatMessages = data || [];
+        let msgs = data || [];
+
+        // 🌟 仅加载当前用户清空截点之后的消息
+        const clearKey = `CLEAR_TS_${currentUser.name}_${activeChatId}`;
+        const clearTs = parseInt(localStorage.getItem(clearKey) || "0", 10);
+        if (clearTs > 0) {
+          msgs = msgs.filter(m => new Date(m.created_at).getTime() > clearTs);
+        }
+
+        currentChatMessages = msgs;
       } catch (err) {
         const localKey = `MSGS_${currentUser.name}_${activeChatId}`;
         currentChatMessages = JSON.parse(localStorage.getItem(localKey) || "[]");
@@ -2293,6 +2715,7 @@
         const isMe = msg.sender_id === currentUser.name;
         const row = document.createElement("div");
         row.className = `message-row ${isMe ? 'sent' : 'received'}`;
+        row.dataset.id = msg.id || msg.created_at;
 
         let contentHtml = "";
         let quoteHtml = "";
@@ -2388,9 +2811,7 @@
           const msg = payload.new;
           if (msg.receiver_id === currentUser.name) {
             const isFriend = contacts.some(c => c.id === msg.sender_id);
-            if (!isFriend && msg.sender_id !== currentUser.name) {
-              return;
-            }
+            if (!isFriend && msg.sender_id !== currentUser.name) return;
 
             const isCurrentlyActive = (activeChatId === msg.sender_id && document.visibilityState === 'visible');
 
@@ -2499,7 +2920,7 @@
       input.focus();
     }
 
-    // 13. 窗口拖拽
+    // 13. 窗口自由拖拽
     let dragState = { isDragging: false, currentEl: null, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 };
 
     function startDrag(e, elementId) {
