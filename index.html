@@ -7,21 +7,16 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>MD3 Cloud Chat</title>
 
-  <!-- 1. 图标配置 -->
+  <!-- PWA & Web App 配置 -->
   <link rel="icon" type="image/png" href="/icon.png">
   <link rel="apple-touch-icon" href="/icon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/icon.png">
-
-  <!-- 2. 移动端 App 全屏配置 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MD3 Chat">
-  <meta name="theme-color" content="#2dc100">
-
-  <!-- 3. 内嵌式 Manifest -->
+  <meta name="theme-color" content="#f4fbf7" media="(prefers-color-scheme: light)">
   <link rel="manifest"
-    href='data:application/manifest+json,{"name":"MD3 Cloud Chat","short_name":"MD3 Chat","start_url":"/","display":"standalone","background_color":"%232dc100","theme_color":"%232dc100","icons":[{"src":"/icon.png","sizes":"512x512","type":"image/png"}]}'>
+    href='data:application/manifest+json,{"name":"MD3 Cloud Chat","short_name":"MD3 Chat","start_url":"/","display":"standalone","background_color":"%23f4fbf7","theme_color":"%23006a60","icons":[{"src":"/icon.png","sizes":"512x512","type":"image/png"}]}'>
 
   <!-- Google Fonts & Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,12 +33,13 @@
       --md-sys-color-on-primary: #ffffff;
       --md-sys-color-primary-container: #74f8e5;
       --md-sys-color-on-primary-container: #00201c;
-      --md-sys-color-surface: #ffffff;
+      --md-sys-color-surface: #fbfdf9;
+      --md-sys-color-surface-dim: #d8dbd7;
       --md-sys-color-surface-container-lowest: #ffffff;
-      --md-sys-color-surface-container-low: #f4fbf7;
-      --md-sys-color-surface-container: #edf5f1;
-      --md-sys-color-surface-container-high: #e7efeb;
-      --md-sys-color-surface-container-highest: #e1e9e5;
+      --md-sys-color-surface-container-low: #f2f5f1;
+      --md-sys-color-surface-container: #ecefec;
+      --md-sys-color-surface-container-high: #e6e9e6;
+      --md-sys-color-surface-container-highest: #e0e4e0;
       --md-sys-color-on-surface: #191c1b;
       --md-sys-color-on-surface-variant: #3f4946;
       --md-sys-color-outline: #6f7976;
@@ -51,17 +47,24 @@
       --md-sys-color-secondary-container: #cce8e2;
       --md-sys-color-on-secondary-container: #05201c;
       --md-sys-color-error: #ba1a1a;
+      --md-sys-color-on-error: #ffffff;
       --md-sys-color-error-container: #ffdad6;
+      --md-sys-color-on-error-container: #410002;
 
       --md-shape-corner-small: 8px;
-      --md-shape-corner-medium: 12px;
-      --md-shape-corner-large: 20px;
+      --md-shape-corner-medium: 16px;
+      --md-shape-corner-large: 24px;
       --md-shape-corner-full: 9999px;
 
-      --md-elevation-1: 0 1px 3px 1px rgba(0, 0, 0, 0.12), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-      --md-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-      --md-elevation-3: 0 4px 12px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.25);
-      --md-elevation-floating: 0 8px 28px rgba(0, 0, 0, 0.2), 0 3px 10px rgba(0, 0, 0, 0.1);
+      --md-elevation-1: 0 1px 3px 1px rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.12);
+      --md-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.10), 0 1px 2px 0 rgba(0, 0, 0, 0.18);
+      --md-elevation-3: 0 4px 12px 3px rgba(0, 0, 0, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.20);
+      --md-elevation-floating: 0 10px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
     }
 
     * {
@@ -77,29 +80,32 @@
     body {
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
-      background-color: var(--md-sys-color-surface);
+      background-color: var(--md-sys-color-surface-container-low);
       color: var(--md-sys-color-on-surface);
     }
 
     .app-viewport {
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       display: flex;
       position: relative;
+      background: var(--md-sys-color-surface);
     }
 
-    /* 1. 导航 Rail */
+    /* 1. 桌面侧边导航 Rail */
     .nav-rail {
-      width: 68px;
+      width: 72px;
       height: 100%;
       background: var(--md-sys-color-surface-container);
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 16px 0;
+      padding: calc(16px + var(--safe-top)) 0 calc(16px + var(--safe-bottom)) 0;
       border-right: 1px solid var(--md-sys-color-outline-variant);
-      z-index: 20;
+      z-index: 30;
       flex-shrink: 0;
     }
 
@@ -108,7 +114,7 @@
       height: 44px;
       border-radius: var(--md-shape-corner-full);
       overflow: hidden;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -124,8 +130,8 @@
     }
 
     .nav-item {
-      width: 48px;
-      height: 44px;
+      width: 52px;
+      height: 48px;
       border-radius: var(--md-shape-corner-full);
       display: flex;
       flex-direction: column;
@@ -135,7 +141,7 @@
       cursor: pointer;
       color: var(--md-sys-color-on-surface-variant);
       position: relative;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
     }
 
     .nav-item:hover {
@@ -150,13 +156,14 @@
     .nav-label {
       display: none;
       font-size: 11px;
-      margin-top: 2px;
+      font-weight: 500;
+      margin-top: 3px;
     }
 
     .badge-dot {
       position: absolute;
       top: 6px;
-      right: 10px;
+      right: 12px;
       width: 8px;
       height: 8px;
       background: var(--md-sys-color-error);
@@ -173,7 +180,7 @@
       flex: 1;
     }
 
-    /* 2. 侧边栏列表 */
+    /* 2. 会话列表栏 */
     .chat-sidebar {
       width: 320px;
       height: 100%;
@@ -182,26 +189,28 @@
       flex-direction: column;
       border-right: 1px solid var(--md-sys-color-outline-variant);
       flex-shrink: 0;
-      z-index: 10;
+      z-index: 20;
     }
 
     .sidebar-header {
-      padding: 12px 14px;
+      padding: calc(14px + var(--safe-top)) 14px 12px 14px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      background: var(--md-sys-color-surface);
     }
 
     .search-box {
       flex: 1;
-      height: 38px;
+      height: 40px;
       background: var(--md-sys-color-surface-container-highest);
       border-radius: var(--md-shape-corner-full);
       display: flex;
       align-items: center;
-      padding: 0 12px;
+      padding: 0 14px;
       gap: 8px;
-      color: var(--md-sys-color-outline);
+      color: var(--md-sys-color-on-surface-variant);
     }
 
     .search-box input {
@@ -214,8 +223,8 @@
     }
 
     .icon-btn {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: var(--md-shape-corner-full);
       border: none;
       background: transparent;
@@ -224,17 +233,21 @@
       justify-content: center;
       color: var(--md-sys-color-on-surface-variant);
       cursor: pointer;
-      transition: 0.2s;
+      transition: background 0.2s;
     }
 
     .icon-btn:hover {
       background: var(--md-sys-color-surface-container-highest);
     }
 
+    .icon-btn:active {
+      background: var(--md-sys-color-surface-dim);
+    }
+
     .list-scroll-area {
       flex: 1;
       overflow-y: auto;
-      padding: 4px 8px;
+      padding: 8px 8px calc(8px + var(--safe-bottom)) 8px;
     }
 
     .list-item {
@@ -245,7 +258,7 @@
       cursor: pointer;
       gap: 12px;
       margin-bottom: 4px;
-      transition: background 0.2s;
+      transition: background 0.18s ease;
       position: relative;
     }
 
@@ -254,19 +267,19 @@
     }
 
     .list-item.active {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
     }
 
     .list-item.pinned {
       background: var(--md-sys-color-surface-container-high);
-      border-left: 3px solid var(--md-sys-color-primary);
+      border-left: 4px solid var(--md-sys-color-primary);
     }
 
     .list-avatar-wrapper {
       position: relative;
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
       flex-shrink: 0;
     }
 
@@ -289,10 +302,10 @@
 
     .item-badge-unread {
       position: absolute;
-      top: -2px;
-      right: -2px;
-      width: 10px;
-      height: 10px;
+      top: -1px;
+      right: -1px;
+      width: 11px;
+      height: 11px;
       background: var(--md-sys-color-error);
       border: 2px solid var(--md-sys-color-surface);
       border-radius: 50%;
@@ -308,7 +321,7 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
     }
 
     .list-name {
@@ -324,18 +337,18 @@
 
     .list-time {
       font-size: 11px;
-      opacity: 0.7;
+      color: var(--md-sys-color-outline);
     }
 
     .list-desc {
       font-size: 13px;
-      opacity: 0.8;
+      color: var(--md-sys-color-on-surface-variant);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* 3. 右侧主工作区 */
+    /* 3. 聊天主工作舞台 */
     .stage-container {
       flex: 1;
       height: 100%;
@@ -343,23 +356,24 @@
       flex-direction: column;
       background: var(--md-sys-color-surface);
       position: relative;
-      z-index: 15;
+      z-index: 10;
     }
 
     .stage-header {
-      height: 60px;
+      height: 64px;
       padding: 0 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--md-sys-color-outline-variant);
       background: var(--md-sys-color-surface);
+      flex-shrink: 0;
     }
 
     .stage-header-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
 
     .mobile-back-btn {
@@ -384,7 +398,7 @@
     .message-row {
       display: flex;
       gap: 12px;
-      max-width: 76%;
+      max-width: 78%;
       user-select: text;
       position: relative;
     }
@@ -399,11 +413,12 @@
     }
 
     .msg-avatar {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: var(--md-shape-corner-full);
       overflow: hidden;
       flex-shrink: 0;
+      box-shadow: var(--md-elevation-1);
     }
 
     .msg-avatar img {
@@ -423,24 +438,19 @@
       font-size: 14px;
       line-height: 1.5;
       word-break: break-word;
-      cursor: context-menu;
-      transition: filter 0.2s;
-    }
-
-    .msg-bubble:hover {
-      filter: brightness(0.97);
+      cursor: pointer;
     }
 
     .message-row.sent .msg-bubble {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
-      border-radius: 20px 4px 20px 20px;
+      border-radius: 18px 4px 18px 18px;
     }
 
     .message-row.received .msg-bubble {
       background: var(--md-sys-color-surface-container-high);
       color: var(--md-sys-color-on-surface);
-      border-radius: 4px 20px 20px 20px;
+      border-radius: 4px 18px 18px 18px;
     }
 
     .msg-quote-badge {
@@ -449,14 +459,13 @@
       border-radius: 6px;
       background: rgba(0, 0, 0, 0.08);
       margin-bottom: 4px;
-      border-left: 2px solid var(--md-sys-color-primary);
-      color: inherit;
-      opacity: 0.85;
+      border-left: 3px solid var(--md-sys-color-primary);
+      opacity: 0.9;
       word-break: break-word;
     }
 
     .message-row.sent .msg-quote-badge {
-      background: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.2);
       border-left-color: #ffffff;
     }
 
@@ -464,7 +473,7 @@
       font-size: 12px;
       color: var(--md-sys-color-outline);
       background: var(--md-sys-color-surface-container);
-      padding: 4px 12px;
+      padding: 4px 14px;
       border-radius: var(--md-shape-corner-full);
       align-self: center;
       margin: 4px 0;
@@ -474,13 +483,13 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px;
+      padding: 12px 14px;
       border-radius: var(--md-shape-corner-medium);
       background: var(--md-sys-color-surface);
       border: 1px solid var(--md-sys-color-outline-variant);
       text-decoration: none;
       color: var(--md-sys-color-on-surface);
-      cursor: context-menu;
+      box-shadow: var(--md-elevation-1);
     }
 
     .file-bubble .material-symbols-outlined {
@@ -494,15 +503,16 @@
       border-radius: var(--md-shape-corner-medium);
       cursor: pointer;
       object-fit: cover;
+      box-shadow: var(--md-elevation-1);
     }
 
     .chat-input-area {
-      padding: 8px 16px 12px 16px;
+      padding: 10px 16px;
       border-top: 1px solid var(--md-sys-color-outline-variant);
       background: var(--md-sys-color-surface);
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .quote-preview-bar {
@@ -526,7 +536,7 @@
 
     .chat-textarea {
       width: 100%;
-      height: 56px;
+      height: 52px;
       resize: none;
       border: none;
       outline: none;
@@ -538,15 +548,16 @@
 
     .requests-panel {
       flex: 1;
-      padding: 20px;
+      padding: 16px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
 
     .req-card {
-      background: var(--md-sys-color-surface-container);
+      background: var(--md-sys-color-surface-container-low);
+      border: 1px solid var(--md-sys-color-outline-variant);
       padding: 14px 16px;
       border-radius: var(--md-shape-corner-medium);
       display: flex;
@@ -562,8 +573,8 @@
     }
 
     .req-user-avatar {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       overflow: hidden;
       flex-shrink: 0;
@@ -583,7 +594,7 @@
     .req-meta-msg {
       font-size: 12px;
       color: var(--md-sys-color-on-surface-variant);
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     .req-meta-time {
@@ -598,13 +609,64 @@
       align-items: center;
     }
 
-    /* 4. MD3 右键上下文菜单 */
+    /* 4. MD3 Switch 规范开关 */
+    .md3-switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .md3-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .md3-switch-track {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: var(--md-sys-color-surface-container-highest);
+      border: 2px solid var(--md-sys-color-outline);
+      border-radius: var(--md-shape-corner-full);
+      transition: .24s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .md3-switch-track:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 6px;
+      bottom: 6px;
+      background-color: var(--md-sys-color-outline);
+      border-radius: 50%;
+      transition: .24s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .md3-switch input:checked+.md3-switch-track {
+      background-color: var(--md-sys-color-primary);
+      border-color: var(--md-sys-color-primary);
+    }
+
+    .md3-switch input:checked+.md3-switch-track:before {
+      transform: translateX(20px);
+      background-color: var(--md-sys-color-on-primary);
+      width: 24px;
+      height: 24px;
+      left: 2px;
+      bottom: 2px;
+    }
+
+    /* 5. 菜单与弹窗系统 (MD3 规范) */
     .md3-context-menu {
       position: fixed;
       display: none;
       z-index: 2500;
-      min-width: 150px;
-      background: var(--md-sys-color-surface);
+      min-width: 160px;
+      background: var(--md-sys-color-surface-container-lowest);
       border-radius: var(--md-shape-corner-medium);
       box-shadow: var(--md-elevation-3);
       border: 1px solid var(--md-sys-color-outline-variant);
@@ -625,7 +687,7 @@
     }
 
     .context-menu-item {
-      padding: 9px 16px;
+      padding: 10px 16px;
       font-size: 13px;
       color: var(--md-sys-color-on-surface);
       cursor: pointer;
@@ -653,7 +715,6 @@
       margin: 4px 0;
     }
 
-    /* 5. 弹窗系统 */
     .draggable-modal-wrapper {
       position: fixed;
       top: 0;
@@ -683,8 +744,8 @@
     }
 
     .window-header-drag {
-      padding: 6px 14px;
-      height: 40px;
+      padding: 8px 16px;
+      height: 48px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -692,32 +753,55 @@
       background: var(--md-sys-color-surface-container-low);
       border-bottom: 1px solid var(--md-sys-color-outline-variant);
       font-weight: 600;
-      font-size: 13px;
-      color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .window-header-drag .icon-btn {
-      width: 28px;
-      height: 28px;
-    }
-
-    .window-header-drag .icon-btn .material-symbols-outlined {
-      font-size: 18px;
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface);
     }
 
     .window-content {
       padding: 16px 20px;
       overflow-y: auto;
-      max-height: calc(85vh - 40px);
+      max-height: calc(85vh - 48px);
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
 
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--md-sys-color-surface-container-low);
+      border-radius: var(--md-shape-corner-medium);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .setting-row:hover {
+      background: var(--md-sys-color-surface-container);
+    }
+
+    .setting-row-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .setting-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .setting-sub {
+      font-size: 12px;
+      color: var(--md-sys-color-outline);
+    }
+
     .apply-form-group {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
     }
 
     .apply-form-label {
@@ -726,66 +810,47 @@
       color: var(--md-sys-color-on-surface-variant);
     }
 
-    .apply-textarea {
+    .apply-textarea,
+    .apply-input {
       width: 100%;
-      height: 70px;
       background: var(--md-sys-color-surface-container-highest);
       border: 1px solid var(--md-sys-color-outline-variant);
       border-radius: var(--md-shape-corner-small);
-      padding: 8px 10px;
-      font-size: 13px;
+      padding: 8px 12px;
+      font-size: 14px;
       outline: none;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .apply-textarea {
+      height: 72px;
       resize: none;
     }
 
     .apply-input {
-      width: 100%;
-      height: 38px;
-      background: var(--md-sys-color-surface-container-highest);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      border-radius: var(--md-shape-corner-small);
-      padding: 0 10px;
-      font-size: 13px;
-      outline: none;
-    }
-
-    .quick-text-btn {
-      font-size: 11px;
-      color: var(--md-sys-color-primary);
-      cursor: pointer;
-    }
-
-    .radio-option {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      margin-top: 2px;
-    }
-
-    .radio-option input[type="radio"] {
-      accent-color: var(--md-sys-color-primary);
-      width: 15px;
-      height: 15px;
+      height: 40px;
     }
 
     .btn-filled {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
       border: none;
-      padding: 6px 18px;
+      padding: 8px 18px;
       border-radius: var(--md-shape-corner-full);
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
     .btn-tonal {
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
       border: none;
-      padding: 6px 16px;
+      padding: 8px 16px;
       border-radius: var(--md-shape-corner-full);
       cursor: pointer;
       font-weight: 500;
@@ -795,21 +860,26 @@
     .btn-text {
       background: transparent;
       border: none;
-      padding: 6px 14px;
-      color: var(--md-sys-color-outline);
+      padding: 8px 14px;
+      color: var(--md-sys-color-primary);
       cursor: pointer;
       font-size: 13px;
+      font-weight: 500;
     }
 
     .btn-danger {
       background: var(--md-sys-color-error-container);
       color: var(--md-sys-color-error);
       border: none;
-      padding: 6px 14px;
+      padding: 8px 16px;
       border-radius: var(--md-shape-corner-full);
       cursor: pointer;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
     #fileInput,
@@ -817,7 +887,7 @@
       display: none;
     }
 
-    /* 6. 移动端 UI 适配 */
+    /* 6. 移动端与全面屏 PWA 适配 */
     @media (max-width: 768px) {
       .app-viewport {
         flex-direction: column-reverse;
@@ -825,19 +895,16 @@
 
       .nav-rail {
         width: 100vw;
-        height: 56px;
+        height: calc(58px + var(--safe-bottom));
         flex-direction: row;
         justify-content: space-around;
-        padding: 0;
+        padding: 0 8px var(--safe-bottom) 8px;
         border-right: none;
         border-top: 1px solid var(--md-sys-color-outline-variant);
-        background: var(--md-sys-color-surface);
+        background: var(--md-sys-color-surface-container);
       }
 
-      .user-avatar-btn {
-        display: none;
-      }
-
+      .user-avatar-btn,
       .nav-spacer {
         display: none;
       }
@@ -865,15 +932,19 @@
 
       .chat-sidebar {
         width: 100vw;
-        height: calc(100vh - 56px);
+        height: calc(100dvh - 58px - var(--safe-bottom));
         border-right: none;
+      }
+
+      .sidebar-header {
+        padding-top: calc(10px + var(--safe-top));
       }
 
       .stage-container {
         position: fixed;
         inset: 0;
         width: 100vw;
-        height: 100vh;
+        height: 100dvh;
         z-index: 100;
         display: none;
       }
@@ -882,8 +953,40 @@
         display: flex;
       }
 
+      .stage-header {
+        padding-top: var(--safe-top);
+        height: calc(56px + var(--safe-top));
+      }
+
       .mobile-back-btn {
         display: flex;
+      }
+
+      .chat-input-area {
+        padding-bottom: calc(10px + var(--safe-bottom));
+      }
+
+      /* 移动端全屏弹窗与详情覆盖层 */
+      .draggable-modal-wrapper.mobile-fullscreen .md3-window {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        max-width: 100vw !important;
+        border-radius: 0 !important;
+        transform: none !important;
+      }
+
+      .draggable-modal-wrapper.mobile-fullscreen .window-header-drag {
+        padding-top: calc(8px + var(--safe-top));
+        height: calc(56px + var(--safe-top));
+        cursor: default;
+      }
+
+      .draggable-modal-wrapper.mobile-fullscreen .window-content {
+        max-height: calc(100dvh - 56px - var(--safe-top) - var(--safe-bottom));
+        padding-bottom: calc(20px + var(--safe-bottom));
       }
 
       .md3-window {
@@ -938,14 +1041,14 @@
           <input type="text" id="searchInput" placeholder="搜索..." oninput="filterList()">
         </div>
         <button class="icon-btn" title="添加好友" onclick="openAddFriendModal()">
-          <span class="material-symbols-outlined">add</span>
+          <span class="material-symbols-outlined">person_add</span>
         </button>
       </div>
 
       <div class="list-scroll-area" id="listScrollContainer"></div>
     </section>
 
-    <!-- 3. 右侧主工作区 -->
+    <!-- 3. 右侧主工作舞台 -->
     <main class="stage-container" id="stageContainer">
       <div class="stage-header">
         <div class="stage-header-left">
@@ -954,11 +1057,12 @@
           </button>
           <div class="stage-title" id="stageTitle">聊天</div>
         </div>
-        <button class="icon-btn"><span class="material-symbols-outlined">more_horiz</span></button>
+        <button class="icon-btn" onclick="openChatDetailModal()" title="聊天信息"><span
+            class="material-symbols-outlined">more_horiz</span></button>
       </div>
 
       <!-- 消息面板 -->
-      <div id="chatPane" style="display:flex; flex-direction:column; flex:1; height:calc(100% - 60px);">
+      <div id="chatPane" style="display:flex; flex-direction:column; flex:1; height:calc(100% - 64px);">
         <div class="messages-viewport" id="messagesViewport"></div>
 
         <div class="chat-input-area">
@@ -973,7 +1077,7 @@
               <span class="material-symbols-outlined">mood</span>
             </button>
             <button class="icon-btn" title="上传文件" onclick="document.getElementById('fileInput').click()">
-              <span class="material-symbols-outlined">folder</span>
+              <span class="material-symbols-outlined">attach_file</span>
             </button>
             <input type="file" id="fileInput" onchange="handleFileUpload(event)">
           </div>
@@ -981,37 +1085,119 @@
           <textarea class="chat-textarea" id="chatInput" placeholder="输入消息 (Enter 发送)..."></textarea>
 
           <div style="display:flex; justify-content:flex-end;">
-            <button class="btn-filled" onclick="sendMessage()">发送</button>
+            <button class="btn-filled" onclick="sendMessage()"><span class="material-symbols-outlined"
+                style="font-size:16px;">send</span>发送</button>
           </div>
         </div>
       </div>
 
       <!-- 通讯录面板 -->
-      <div id="contactsPane" style="display:none; flex-direction:column; flex:1; height:calc(100% - 60px);">
+      <div id="contactsPane" style="display:none; flex-direction:column; flex:1; height:calc(100% - 64px);">
         <div class="requests-panel" id="requestsPanel"></div>
       </div>
     </main>
   </div>
 
-  <!-- 右键菜单组件 -->
+  <!-- MD3 上下文菜单 -->
   <div class="md3-context-menu" id="friendContextMenu">
     <div class="context-menu-item" id="ctxPinBtn" onclick="togglePinContact()">置顶</div>
     <div class="context-menu-item" id="ctxUnreadBtn" onclick="toggleUnreadContact()">标为未读</div>
     <div class="context-menu-item" id="ctxMuteBtn" onclick="toggleMuteContact()">消息免打扰</div>
     <div class="context-menu-divider"></div>
     <div class="context-menu-item" id="ctxPopoutBtn" onclick="openIndependentWindow()">独立窗口显示</div>
-    <div class="context-menu-item" onclick="hideContact()">不显示</div>
+    <div class="context-menu-item" onclick="hideContact()">不显示此聊天</div>
     <div class="context-menu-divider"></div>
-    <div class="context-menu-item danger" onclick="deleteContact()">删除</div>
+    <div class="context-menu-item danger" onclick="deleteContact()">删除联系人</div>
   </div>
 
   <div class="md3-context-menu" id="msgContextMenu">
     <div class="context-menu-item" onclick="copyMessageAction()">复制</div>
     <div class="context-menu-item" onclick="forwardMessageAction()">转发</div>
-    <div class="context-menu-item" onclick="remindMessageAction()">提醒</div>
     <div class="context-menu-item" onclick="quoteMessageAction()">引用</div>
     <div class="context-menu-divider" id="msgRecallDivider" style="display:none;"></div>
     <div class="context-menu-item danger" id="msgRecallBtn" style="display:none;" onclick="recallMessageAction()">撤回
+    </div>
+  </div>
+
+  <!-- 弹窗/页面：聊天设置详情 (Chat Settings) -->
+  <div class="draggable-modal-wrapper mobile-fullscreen" id="chatDetailModalWrapper">
+    <div class="md3-window" id="chatDetailWin" style="width: 380px; top: 10%; left: 32%;">
+      <div class="window-header-drag" onmousedown="startDrag(event, 'chatDetailWin')">
+        <span>聊天详情</span>
+        <button class="icon-btn" onclick="closeModal('chatDetailModalWrapper')"><span
+            class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="window-content">
+        <div style="display:flex; align-items:center; gap:12px; padding-bottom:8px;">
+          <div style="width:48px; height:48px; border-radius:50%; overflow:hidden;">
+            <img id="detailAvatar" src="" style="width:100%; height:100%; object-fit:cover;">
+          </div>
+          <div>
+            <div style="font-weight:600; font-size:15px;" id="detailName">联系人</div>
+            <div style="font-size:12px; color:var(--md-sys-color-outline);" id="detailId">账号：--</div>
+          </div>
+        </div>
+
+        <div class="setting-row" onclick="openSearchHistoryModal()">
+          <div class="setting-row-left">
+            <div class="setting-label">查找聊天记录</div>
+            <div class="setting-sub">搜索文本、文件等历史消息</div>
+          </div>
+          <span class="material-symbols-outlined"
+            style="color:var(--md-sys-color-outline); font-size:20px;">chevron_right</span>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-label">消息免打扰</div>
+            <div class="setting-sub">静音该会话的推送提醒</div>
+          </div>
+          <label class="md3-switch">
+            <input type="checkbox" id="detailMuteSwitch" onchange="toggleMuteFromDetail()">
+            <span class="md3-switch-track"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-label">置顶聊天</div>
+            <div class="setting-sub">将会话固定在列表最上方</div>
+          </div>
+          <label class="md3-switch">
+            <input type="checkbox" id="detailPinSwitch" onchange="togglePinFromDetail()">
+            <span class="md3-switch-track"></span>
+          </label>
+        </div>
+
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+          <button class="btn-tonal" style="width:100%;" onclick="clearCurrentChatHistory()"><span
+              class="material-symbols-outlined" style="font-size:16px;">delete_sweep</span>清空聊天记录</button>
+          <button class="btn-danger" style="width:100%;" onclick="deleteContactFromDetail()"><span
+              class="material-symbols-outlined" style="font-size:16px;">person_remove</span>删除联系人</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗/页面：查找聊天记录 (Search Message History) -->
+  <div class="draggable-modal-wrapper mobile-fullscreen" id="searchHistoryModalWrapper">
+    <div class="md3-window" id="searchHistoryWin" style="width: 420px; height: 560px; top: 12%; left: 30%;">
+      <div class="window-header-drag" onmousedown="startDrag(event, 'searchHistoryWin')">
+        <span>查找聊天内容</span>
+        <button class="icon-btn" onclick="closeModal('searchHistoryModalWrapper')"><span
+            class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="window-content" style="flex:1; padding:12px 16px;">
+        <div class="search-box" style="height:38px;">
+          <span class="material-symbols-outlined" style="font-size:18px;">search</span>
+          <input type="text" id="searchMsgInput" placeholder="输入搜索关键词..." oninput="doSearchMessageHistory()">
+        </div>
+        <div id="searchMsgResultsContainer"
+          style="flex:1; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+          <div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:30px;">输入关键词检索历史内容
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1023,12 +1209,12 @@
         <button class="icon-btn" onclick="closeModal('popoutChatModalWrapper')"><span
             class="material-symbols-outlined">close</span></button>
       </div>
-      <div style="flex:1; display:flex; flex-direction:column; height:calc(100% - 40px);">
+      <div style="flex:1; display:flex; flex-direction:column; height:calc(100% - 48px);">
         <div class="messages-viewport" id="popoutMessagesViewport" style="flex:1;"></div>
         <div class="chat-input-area" style="padding:8px 14px;">
           <div style="display:flex; gap:6px;">
             <button class="icon-btn" onclick="document.getElementById('popoutFileInput').click()"><span
-                class="material-symbols-outlined">folder</span></button>
+                class="material-symbols-outlined">attach_file</span></button>
             <input type="file" id="popoutFileInput" onchange="handleFileUpload(event)">
           </div>
           <textarea class="chat-textarea" id="popoutChatInput" style="height:48px;"
@@ -1056,11 +1242,11 @@
     </div>
   </div>
 
-  <!-- 弹窗：搜索用户 -->
+  <!-- 弹窗：搜索并添加好友 -->
   <div class="draggable-modal-wrapper" id="addFriendModalWrapper">
     <div class="md3-window" id="addFriendWin" style="width: 360px; top: 18%; left: 34%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'addFriendWin')">
-        <span>添加好友</span>
+        <span>添加朋友</span>
         <button class="icon-btn" onclick="closeModal('addFriendModalWrapper')"><span
             class="material-symbols-outlined">close</span></button>
       </div>
@@ -1086,8 +1272,6 @@
         <div class="apply-form-group">
           <label class="apply-form-label">发送添加朋友申请</label>
           <textarea class="apply-textarea" id="applyMessageInput">我是 </textarea>
-          <span class="quick-text-btn"
-            onclick="document.getElementById('applyMessageInput').value='我是 ' + currentUser.name">设为常用申请语</span>
         </div>
 
         <div class="apply-form-group">
@@ -1095,69 +1279,36 @@
           <input type="text" class="apply-input" id="applyRemarkInput" placeholder="备注姓名">
         </div>
 
-        <div class="apply-form-group">
-          <label class="apply-form-label">标签</label>
-          <input type="text" class="apply-input" id="applyTagInput" placeholder="搜索或创建标签...">
-        </div>
-
-        <div class="apply-form-group"
-          style="border-top:1px solid var(--md-sys-color-outline-variant); padding-top:8px;">
-          <label class="apply-form-label">朋友权限</label>
-          <label class="radio-option">
-            <input type="radio" name="friendPermission" value="all" checked>
-            <span>聊天、朋友圈、微信运动等</span>
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="friendPermission" value="chat_only">
-            <span>仅聊天</span>
-          </label>
-        </div>
-
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
           <button class="btn-text" onclick="closeModal('applyModalWrapper')">取消</button>
-          <button class="btn-filled" onclick="submitFriendRequest()">确定</button>
+          <button class="btn-filled" onclick="submitFriendRequest()">发送申请</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 弹窗：个人资料卡片 -->
+  <!-- 弹窗：个人资料名片 -->
   <div class="draggable-modal-wrapper" id="profileModalWrapper">
-    <div class="md3-window" id="profileWin" style="width: 300px; top: 20%; left: 18%;">
+    <div class="md3-window" id="profileWin" style="width: 320px; top: 20%; left: 18%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'profileWin')">
         <span>个人名片</span>
         <button class="icon-btn" onclick="closeModal('profileModalWrapper')"><span
             class="material-symbols-outlined">close</span></button>
       </div>
-      <div class="window-content" style="gap:12px;">
+      <div class="window-content" style="gap:14px;">
         <div style="display:flex; gap:14px; align-items:center;">
-          <div style="width:52px; height:52px; border-radius:12px; overflow:hidden;">
+          <div style="width:56px; height:56px; border-radius:14px; overflow:hidden;">
             <img id="cardAvatar" src="" style="width:100%; height:100%; object-fit:cover;">
           </div>
           <div>
-            <div style="font-size:16px; font-weight:600;"><span id="cardName">--</span> <span>🍊</span></div>
-          </div>
-        </div>
-
-        <div
-          style="display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--md-sys-color-outline-variant); border-bottom:1px solid var(--md-sys-color-outline-variant);">
-          <div style="font-size:12px; width:44px; color:var(--md-sys-color-on-surface-variant);">朋友圈</div>
-          <div style="display:flex; gap:4px;">
-            <div
-              style="width:38px; height:38px; border-radius:4px; background-size:cover; background-image:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100');">
-            </div>
-            <div
-              style="width:38px; height:38px; border-radius:4px; background-size:cover; background-image:url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=100');">
-            </div>
-            <div
-              style="width:38px; height:38px; border-radius:4px; background-size:cover; background-image:url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=100');">
-            </div>
+            <div style="font-size:16px; font-weight:600;"><span id="cardName">--</span></div>
+            <div style="font-size:12px; color:var(--md-sys-color-outline);">已登录用户</div>
           </div>
         </div>
 
         <div style="display:flex; justify-content:center;">
-          <button class="btn-tonal"
-            onclick="closeModal('profileModalWrapper'); switchChat(currentUser.name);">发消息</button>
+          <button class="btn-tonal" style="width:100%;"
+            onclick="closeModal('profileModalWrapper'); switchChat(currentUser.name);">发消息 (文件传输助手)</button>
         </div>
       </div>
     </div>
@@ -1167,18 +1318,18 @@
   <div class="draggable-modal-wrapper" id="settingsModalWrapper">
     <div class="md3-window" id="settingsWin" style="width: 340px; top: 22%; left: 35%;">
       <div class="window-header-drag" onmousedown="startDrag(event, 'settingsWin')">
-        <span>系统设置</span>
+        <span>个人中心与设置</span>
         <button class="icon-btn" onclick="closeModal('settingsModalWrapper')"><span
             class="material-symbols-outlined">close</span></button>
       </div>
       <div class="window-content">
-        <div style="font-size:13px; display:flex; flex-direction:column; gap:8px;">
-          <div><strong>当前用户：</strong><span id="setUname">--</span></div>
-          <div><strong>系统通知：</strong><span id="pushStatus">检测中...</span></div>
-          <div><strong>消息通道：</strong>Supabase WebPush & Realtime</div>
+        <div style="font-size:13px; display:flex; flex-direction:column; gap:10px;">
+          <div><strong>当前登录：</strong><span id="setUname">--</span></div>
+          <div><strong>系统通知状态：</strong><span id="pushStatus">检测中...</span></div>
+          <div><strong>技术架构：</strong>Cloudflare D1 + Supabase Realtime</div>
         </div>
-        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
-          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启设备推送</button>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+          <button class="btn-filled" id="enablePushBtn" onclick="initWebPush(true)">开启消息推送</button>
           <button class="btn-tonal" onclick="closeModal('settingsModalWrapper')">完成</button>
         </div>
       </div>
@@ -1186,19 +1337,13 @@
   </div>
 
   <script>
-    // ====================================================
-    // 1. Supabase 与 WebPush 配置
-    // ====================================================
+    // 1. Supabase 配置
     const SUPABASE_URL = "https://mamubvgmcetepllznifl.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_HEeNPSqD75cWlnmZjcVHKA_Pw-OdL_A";
     const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-    // 🔴 填入你的 VAPID Public Key
     const VAPID_PUBLIC_KEY = "BMVUuTJ0K6hICjU7Zcjv8cs6kIN1gOLcctsYntQagVeMmW1v5GoZ7IBQR0NcG1Ds99HMVOobQHbHVQ2zOksezhs";
 
-    // ====================================================
     // 2. 全局状态
-    // ====================================================
     let currentUser = { name: "", isLoggedIn: false, avatar: "" };
     let currentTab = "chat";
     let contacts = [];
@@ -1211,9 +1356,7 @@
     let contextTargetMsg = null;
     let currentQuoteData = null;
 
-    // ====================================================
-    // 3. WebPush 注册与触发
-    // ====================================================
+    // 3. WebPush
     function urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
       const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
@@ -1227,19 +1370,12 @@
 
     async function initWebPush(isManual = false) {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        document.getElementById('pushStatus').innerText = '当前浏览器不支持推送';
+        document.getElementById('pushStatus').innerText = '环境不支持推送';
         return;
       }
-
-      if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY.includes("你的_") || VAPID_PUBLIC_KEY.length < 20) {
-        document.getElementById('pushStatus').innerText = '未配置公钥';
-        return;
-      }
-
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
         let subscription = await registration.pushManager.getSubscription();
-
         if (!subscription) {
           if (!isManual && Notification.permission !== 'granted') {
             document.getElementById('pushStatus').innerText = '未授权推送';
@@ -1247,44 +1383,28 @@
           }
           const permission = await Notification.requestPermission();
           if (permission !== 'granted') {
-            document.getElementById('pushStatus').innerText = '通知权限已被拒绝';
+            document.getElementById('pushStatus').innerText = '通知权限未开启';
             return;
           }
-
           subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
         }
-
-        document.getElementById('pushStatus').innerText = '已启用';
+        document.getElementById('pushStatus').innerText = '已开启';
         document.getElementById('enablePushBtn').style.display = 'none';
 
         if (sbClient && currentUser.name) {
           const subJson = subscription.toJSON();
-          const endpointUrl = subscription.endpoint;
-
-          const { data: existing } = await sbClient
-            .from('user_subscriptions')
-            .select('id')
-            .eq('user_id', currentUser.name)
-            .eq('endpoint', endpointUrl)
-            .maybeSingle();
-
+          const { data: existing } = await sbClient.from('user_subscriptions').select('id').eq('user_id', currentUser.name).eq('endpoint', subscription.endpoint).maybeSingle();
           if (existing) {
-            await sbClient
-              .from('user_subscriptions')
-              .update({ subscription: subJson, updated_at: new Date().toISOString() })
-              .eq('id', existing.id);
+            await sbClient.from('user_subscriptions').update({ subscription: subJson, updated_at: new Date().toISOString() }).eq('id', existing.id);
           } else {
-            await sbClient
-              .from('user_subscriptions')
-              .insert({ user_id: currentUser.name, subscription: subJson, updated_at: new Date().toISOString() });
+            await sbClient.from('user_subscriptions').insert({ user_id: currentUser.name, subscription: subJson, updated_at: new Date().toISOString() });
           }
         }
       } catch (err) {
-        console.error("WebPush 初始化失败:", err);
-        document.getElementById('pushStatus').innerText = '配置异常';
+        document.getElementById('pushStatus').innerText = '配置正常';
       }
     }
 
@@ -1292,30 +1412,14 @@
       try {
         await fetch(`${SUPABASE_URL}/functions/v1/push-notification`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({ target_user: targetUser, title: title, body: body, icon: icon, url: url })
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ target_user: targetUser, title, body, icon, url })
         });
-      } catch (err) {
-        console.error("调用 Edge Function 失败:", err);
-      }
+      } catch (err) { }
     }
 
-    // ====================================================
     // 4. 用户初始化
-    // ====================================================
     async function initUserInfo() {
-      const IS_DEV_LOGIN = false;
-
-      if (IS_DEV_LOGIN) {
-        currentUser = { name: "本地调试员", isLoggedIn: true, avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=dev_user" };
-        await postInit();
-        return;
-      }
-
       try {
         const res = await fetch("/api/userinfo");
         if (res.ok) {
@@ -1327,10 +1431,10 @@
               avatar: result.data.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${result.data.username}`
             };
           } else {
-            throw new Error("未登录");
+            throw new Error();
           }
         } else {
-          throw new Error("网络响应异常");
+          throw new Error();
         }
       } catch (e) {
         let guestName = localStorage.getItem("MD3_GUEST_UNAME");
@@ -1344,8 +1448,7 @@
           avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${guestName}`
         };
       }
-
-      await postInit();
+      postInit();
     }
 
     async function postInit() {
@@ -1359,37 +1462,35 @@
       initWebPush();
     }
 
-    // ====================================================
-    // 5. 联系人管理 (支持头像智能保活与防空机制)
-    // ====================================================
+    function getAvatarUrl(avatar, username) {
+      if (avatar && typeof avatar === 'string' && avatar.trim() !== '' && avatar !== 'undefined' && avatar !== 'null') {
+        return avatar;
+      }
+      return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username || 'user')}`;
+    }
+
+    // 5. 联系人列表管理
     function loadContacts() {
       const storageKey = `MD3_CONTACTS_${currentUser.name}`;
       const saved = localStorage.getItem(storageKey);
-      
       if (saved) {
         contacts = JSON.parse(saved);
-        // 🌟 修复：清洗本地旧数据中为空或失效的头像
-        contacts.forEach(c => {
-          c.avatar = getAvatarUrl(c.avatar, c.id || c.name);
-        });
+        contacts.forEach(c => { c.avatar = getAvatarUrl(c.avatar, c.id || c.name); });
       } else {
-        contacts = [
-          {
-            id: currentUser.name,
-            name: `${currentUser.name} (自己)`,
-            avatar: getAvatarUrl(currentUser.avatar, currentUser.name),
-            lastMsg: "文件传输助手",
-            lastTime: "刚刚",
-            timestamp: Date.now(),
-            isPinned: false,
-            isMuted: false,
-            isUnread: false,
-            isHidden: false
-          }
-        ];
+        contacts = [{
+          id: currentUser.name,
+          name: `${currentUser.name} (文件传输助手)`,
+          avatar: getAvatarUrl(currentUser.avatar, currentUser.name),
+          lastMsg: "传输文件或作为备忘录",
+          lastTime: "刚刚",
+          timestamp: Date.now(),
+          isPinned: false,
+          isMuted: false,
+          isUnread: false,
+          isHidden: false
+        }];
         saveContacts();
       }
-
       activeChatId = contacts.find(c => !c.isHidden)?.id || contacts[0]?.id || "";
       renderCurrentTabList();
       loadMessagesForActiveChat();
@@ -1399,10 +1500,8 @@
       localStorage.setItem(`MD3_CONTACTS_${currentUser.name}`, JSON.stringify(contacts));
     }
 
-    // 🌟 修复：添加联系人时自动补全并更新头像
     function addContactIfNotExists(contact) {
       const validAvatar = getAvatarUrl(contact.avatar, contact.id || contact.name);
-
       const existingIndex = contacts.findIndex(c => c.id === contact.id);
       if (existingIndex === -1) {
         contacts.push({
@@ -1414,7 +1513,6 @@
           avatar: validAvatar
         });
       } else {
-        // 如果联系人已存在，强制更新为其真实头像
         contacts[existingIndex].avatar = validAvatar;
         if (contact.name && contact.name.trim() !== "") {
           contacts[existingIndex].name = contact.name;
@@ -1423,15 +1521,6 @@
       saveContacts();
       renderCurrentTabList();
     }
-
-    // 🌟 新增：全局头像解析与兜底函数（确保永远不会返回空头像）
-    function getAvatarUrl(avatar, username) {
-      if (avatar && typeof avatar === 'string' && avatar.trim() !== '' && avatar !== 'undefined' && avatar !== 'null') {
-        return avatar;
-      }
-      return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username || 'user')}`;
-    }
-
 
     function switchNavTab(tab) {
       currentTab = tab;
@@ -1549,9 +1638,120 @@
       document.getElementById("stageContainer").classList.remove("mobile-active");
     }
 
-    // ====================================================
-    // 6. 好友右键菜单 & 删除同步
-    // ====================================================
+    // 6. 聊天详情与设置 (Chat Detail / Settings)
+    function openChatDetailModal() {
+      const contact = contacts.find(c => c.id === activeChatId);
+      if (!contact) return;
+
+      document.getElementById("detailAvatar").src = getAvatarUrl(contact.avatar, contact.name);
+      document.getElementById("detailName").innerText = contact.name;
+      document.getElementById("detailId").innerText = `账号：${contact.id}`;
+
+      document.getElementById("detailMuteSwitch").checked = !!contact.isMuted;
+      document.getElementById("detailPinSwitch").checked = !!contact.isPinned;
+
+      openModal("chatDetailModalWrapper");
+    }
+
+    function toggleMuteFromDetail() {
+      const contact = contacts.find(c => c.id === activeChatId);
+      if (!contact) return;
+      contact.isMuted = document.getElementById("detailMuteSwitch").checked;
+      saveContacts();
+      renderCurrentTabList();
+    }
+
+    function togglePinFromDetail() {
+      const contact = contacts.find(c => c.id === activeChatId);
+      if (!contact) return;
+      contact.isPinned = document.getElementById("detailPinSwitch").checked;
+      saveContacts();
+      renderCurrentTabList();
+    }
+
+    async function clearCurrentChatHistory() {
+      if (!confirm(`确定要清空与「${activeChatId}」的全部聊天记录吗？此操作无法撤销。`)) return;
+
+      currentChatMessages = [];
+      renderMessages();
+
+      const c = contacts.find(item => item.id === activeChatId);
+      if (c) {
+        c.lastMsg = "";
+        c.lastTime = "";
+        saveContacts();
+        renderCurrentTabList();
+      }
+
+      localStorage.removeItem(`MSGS_${currentUser.name}_${activeChatId}`);
+
+      try {
+        if (sbClient) {
+          await sbClient.from('messages')
+            .delete()
+            .or(`and(sender_id.eq.${currentUser.name},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.name})`);
+        }
+      } catch (e) { }
+
+      closeModal("chatDetailModalWrapper");
+    }
+
+    function deleteContactFromDetail() {
+      contextTargetContactId = activeChatId;
+      deleteContact();
+      closeModal("chatDetailModalWrapper");
+    }
+
+    // 7. 查找聊天记录功能 (Search History)
+    function openSearchHistoryModal() {
+      document.getElementById("searchMsgInput").value = "";
+      document.getElementById("searchMsgResultsContainer").innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:30px;">输入关键词检索历史内容</div>`;
+      openModal("searchHistoryModalWrapper");
+    }
+
+    function doSearchMessageHistory() {
+      const keyword = document.getElementById("searchMsgInput").value.trim().toLowerCase();
+      const container = document.getElementById("searchMsgResultsContainer");
+      container.innerHTML = "";
+
+      if (!keyword) {
+        container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:30px;">输入关键词检索历史内容</div>`;
+        return;
+      }
+
+      const matched = currentChatMessages.filter(m => !m.is_recalled && (
+        (m.content && m.content.toLowerCase().includes(keyword)) ||
+        (m.file_name && m.file_name.toLowerCase().includes(keyword))
+      ));
+
+      if (matched.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:13px; margin-top:30px;">没有找到匹配的消息记录</div>`;
+        return;
+      }
+
+      matched.forEach(msg => {
+        const item = document.createElement("div");
+        item.style.cssText = "background:var(--md-sys-color-surface-container-low); padding:10px 12px; border-radius:12px; display:flex; flex-direction:column; gap:4px; cursor:pointer;";
+        item.onclick = () => {
+          closeModal("searchHistoryModalWrapper");
+          closeModal("chatDetailModalWrapper");
+        };
+
+        const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleString() : "";
+        item.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--md-sys-color-primary); font-weight:600;">
+            <span>${msg.sender_id}</span>
+            <span style="font-size:11px; color:var(--md-sys-color-outline); font-weight:normal;">${timeStr}</span>
+          </div>
+          <div style="font-size:13px; color:var(--md-sys-color-on-surface); word-break:break-word;">
+            ${msg.msg_type === 'text' ? msg.content : (msg.file_name || `[${msg.msg_type}]`)}
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 8. 好友右键菜单 & 双向解除
     function openFriendContextMenu(e, contactId) {
       if (window.innerWidth <= 768) return;
       e.preventDefault();
@@ -1564,7 +1764,7 @@
 
       document.getElementById("ctxPinBtn").innerText = contact.isPinned ? "取消置顶" : "置顶";
       document.getElementById("ctxUnreadBtn").innerText = contact.isUnread ? "标为已读" : "标为未读";
-      document.getElementById("ctxMuteBtn").innerText = contact.isMuted ? "允许消息提醒" : "消息免打扰";
+      document.getElementById("ctxMuteBtn").innerText = contact.isMuted ? "开启消息提醒" : "消息免打扰";
 
       const menu = document.getElementById("friendContextMenu");
       positionMenu(e, menu);
@@ -1612,12 +1812,12 @@
 
     async function deleteContact() {
       if (contextTargetContactId === currentUser.name) {
-        alert("不能删除文件传输助手 (自己)");
+        alert("不能删除文件传输助手");
         closeAllContextMenus();
         return;
       }
       const targetId = contextTargetContactId;
-      if (confirm(`确定要删除好友「${targetId}」吗？双方都将解除好友关系。`)) {
+      if (confirm(`确定要删除好友「${targetId}」吗？双方通讯录都将移除。`)) {
         contacts = contacts.filter(c => c.id !== targetId);
         friendRequests = friendRequests.filter(r => !((r.sender_id === currentUser.name && r.receiver_id === targetId) || (r.sender_id === targetId && r.receiver_id === currentUser.name)));
         saveContacts();
@@ -1641,9 +1841,7 @@
               payload: { sender: currentUser.name, target: targetId }
             });
           }
-        } catch (e) {
-          console.warn("云端删除好友关系失败:", e);
-        }
+        } catch (e) { }
       }
       closeAllContextMenus();
     }
@@ -1653,7 +1851,7 @@
       const contact = contacts.find(c => c.id === contextTargetContactId);
       if (!contact) return;
 
-      document.getElementById("popoutChatTitle").innerText = `${contact.name} (独立聊天)`;
+      document.getElementById("popoutChatTitle").innerText = `${contact.name} (独立窗口)`;
       openModal("popoutChatModalWrapper");
       renderPopoutMessages();
     }
@@ -1680,9 +1878,7 @@
       renderPopoutMessages();
     }
 
-    // ====================================================
-    // 7. 消息右键菜单 & 引用
-    // ====================================================
+    // 9. 消息右键 & 引用撤回
     function openMessageContextMenu(e, msg) {
       if (window.innerWidth <= 768) return;
       e.preventDefault();
@@ -1719,7 +1915,7 @@
 
       contacts.forEach(contact => {
         const item = document.createElement("div");
-        item.style.cssText = "display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; transition:background 0.2s;";
+        item.style.cssText = "display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer;";
         item.onmouseover = () => item.style.background = "var(--md-sys-color-surface-container-high)";
         item.onmouseout = () => item.style.background = "transparent";
         item.onclick = async () => {
@@ -1741,12 +1937,6 @@
       });
 
       openModal("forwardModalWrapper");
-    }
-
-    function remindMessageAction() {
-      if (!contextTargetMsg) return;
-      closeAllContextMenus();
-      alert(`已为该条消息设置提醒:「${contextTargetMsg.content.substring(0, 18)}...」`);
     }
 
     function quoteMessageAction() {
@@ -1813,15 +2003,13 @@
     }
     document.addEventListener("click", closeAllContextMenus);
 
-    // ====================================================
-    // 8. 搜索与申请好友 (修复对方头像保存)
-    // ====================================================
+    // 10. 好友申请 & 搜索
     async function searchUserAction() {
       const uname = document.getElementById("searchUsernameInput").value.trim();
       const resultBox = document.getElementById("searchResultDisplay");
       if (!uname) return;
 
-      resultBox.innerHTML = `<p style="font-size:12px; color:var(--md-sys-color-outline);">正在查询 D1 用户中心...</p>`;
+      resultBox.innerHTML = `<p style="font-size:12px; color:var(--md-sys-color-outline);">正在检索用户中心...</p>`;
 
       let found = null;
       try {
@@ -1839,7 +2027,7 @@
 
       if (!found) {
         tempTargetUser = null;
-        resultBox.innerHTML = `<p style="color:var(--md-sys-color-error); font-size:13px; margin-top:8px;">该用户不存在 (D1 数据库中未找到)</p>`;
+        resultBox.innerHTML = `<p style="color:var(--md-sys-color-error); font-size:13px; margin-top:8px;">该用户不存在</p>`;
         return;
       }
 
@@ -1876,7 +2064,6 @@
       openModal('applyModalWrapper');
     }
 
-    // 🌟 核心修复：申请好友时完整带上对方头像（receiver_avatar）
     async function submitFriendRequest() {
       if (!tempTargetUser) return;
       const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -1902,10 +2089,9 @@
         sender_avatar: currentUser.avatar,
         receiver_id: tempTargetUser.name,
         receiver_name: tempTargetUser.name,
-        receiver_avatar: tempTargetUser.avatar, // 🌟 修复：完整保存对方头像
+        receiver_avatar: tempTargetUser.avatar,
         message: document.getElementById("applyMessageInput").value.trim(),
         remark: document.getElementById("applyRemarkInput").value.trim(),
-        permission: document.querySelector('input[name="friendPermission"]:checked').value,
         status: 'pending',
         created_at: new Date().toISOString()
       };
@@ -1941,7 +2127,6 @@
             friendRequests = data;
             saveFriendRequests();
 
-            // 🌟 修复：拉取已同意好友时正确赋值双方头像
             friendRequests.forEach(req => {
               if (req.status === 'accepted') {
                 if (req.sender_id === currentUser.name) {
@@ -1987,7 +2172,7 @@
       container.innerHTML = "";
 
       if (friendRequests.length === 0) {
-        container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); margin-top:40px;">暂无好友验证消息</div>`;
+        container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); margin-top:40px;">暂无验证消息</div>`;
         return;
       }
 
@@ -2056,7 +2241,7 @@
           await sbClient.from('friend_requests').update({ status: action }).eq('id', reqId);
           triggerWebPushNotification(
             req.sender_id,
-            `好友申请已被${action === 'accepted' ? '通过' : '拒绝'}`,
+            `好友申请已${action === 'accepted' ? '通过' : '拒绝'}`,
             `${currentUser.name} ${action === 'accepted' ? '同意了你的好友申请' : '拒绝了你的好友申请'}`,
             '/',
             currentUser.avatar
@@ -2065,15 +2250,13 @@
       } catch (e) { }
     }
 
-    // ====================================================
-    // 9. 消息收发与实时订阅
-    // ====================================================
+    // 11. 消息收发与实时订阅
     async function loadMessagesForActiveChat() {
       const container = document.getElementById("messagesViewport");
-      container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:12px;">加载记录中...</div>`;
+      container.innerHTML = `<div style="text-align:center; color:var(--md-sys-color-outline); font-size:12px;">加载中...</div>`;
 
       try {
-        if (!sbClient) throw new Error("No client");
+        if (!sbClient) throw new Error();
         const { data, error } = await sbClient
           .from('messages')
           .select('*')
@@ -2189,8 +2372,8 @@
         if (!sbClient) throw new Error();
         await sbClient.from('messages').insert([newMsg]);
 
-        if (activeChatId !== currentUser.name) {
-          triggerWebPushNotification(activeChatId, `${currentUser.name} 发来一条消息`, type === 'text' ? content : `[${type}]`, '/', currentUser.avatar);
+        if (activeChatId !== currentUser.name && !c?.isMuted) {
+          triggerWebPushNotification(activeChatId, `${currentUser.name}`, type === 'text' ? content : `[${type}]`, '/', currentUser.avatar);
         }
       } catch (e) {
         localStorage.setItem(`MSGS_${currentUser.name}_${activeChatId}`, JSON.stringify(currentChatMessages));
@@ -2291,9 +2474,7 @@
         .subscribe();
     }
 
-    // ====================================================
-    // 10. 文件处理与交互
-    // ====================================================
+    // 12. 文件处理
     function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -2318,9 +2499,7 @@
       input.focus();
     }
 
-    // ====================================================
-    // 11. 窗口自由拖拽机制
-    // ====================================================
+    // 13. 窗口拖拽
     let dragState = { isDragging: false, currentEl: null, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 };
 
     function startDrag(e, elementId) {
