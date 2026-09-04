@@ -1822,15 +1822,15 @@
                 updated_at: new Date().toISOString()
               }, { onConflict: 'user_id,endpoint' });
             }
-
-            // 同步订阅至 Cloudflare Worker
+            // 必须修改为显式 toJSON()：
+            const subJson = subscription.toJSON();
             if (PUSH_SERVER_URL) {
               await fetch(`${PUSH_SERVER_URL}/api/subscribe`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   userId: currentUser.name,
-                  subscription: subscription
+                  subscription: subJson
                 })
               }).catch(() => {});
             }
