@@ -1813,14 +1813,41 @@
           }
 
           if (subscription && currentUser.name) {
-            // 同步订阅至 Supabase
+            // 修复后代码：无论表里有没有唯一约束，均可稳定写入
             if (sbClient) {
-              await sbClient.from('user_subscriptions').upsert({
-                user_id: currentUser.name,
-                endpoint: subscription.endpoint,
-                subscription: subscription.toJSON(),
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'user_id,endpoint' });
+              try {
+                const subJson = subscription.toJSON();
+                // 1. 先查询是否存在该用户的该设备
+                const { data: existing } = await sbClient
+                  .from('user_subscriptions')
+                  .select('id')
+                  .eq('user_id', currentUser.name)
+                  .eq('endpoint', subscription.endpoint)
+                  .maybeSingle();
+
+                if (existing && existing.id) {
+                  // 2. 已存在则更新
+                  await sbClient
+                    .from('user_subscriptions')
+                    .update({
+                      subscription: subJson,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', existing.id);
+                } else {
+                  // 3. 不存在则插入新记录
+                  await sbClient
+                    .from('user_subscriptions')
+                    .insert([{
+                      user_id: currentUser.name,
+                      endpoint: subscription.endpoint,
+                      subscription: subJson,
+                      updated_at: new Date().toISOString()
+                    }]);
+                }
+              } catch (err) {
+                console.error("写入 Supabase user_subscriptions 失败:", err);
+              }
             }
             // 必须修改为显式 toJSON()：
             const subJson = subscription.toJSON();
