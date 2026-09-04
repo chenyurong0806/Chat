@@ -1,4 +1,4 @@
-// sw.js - 规范化生命周期的离线推送服务
+// sw.js - 标准 WebPush 离线推送与唤醒服务
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -7,20 +7,22 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(clients.claim());
 });
 
-self.addEventListener('push', function (event) {
-  // 必须把所有逻辑用 event.waitUntil 彻底锁定，防止手机后台杀进程
+// 监听系统级离线推送
+self.addEventListener('push', (event) => {
+  // 必须使用 event.waitUntil 将全部解析和弹出逻辑锁住，防止手机后台杀进程
   event.waitUntil(
     (async () => {
-      if (!event.data) return;
+      let payload = { title: '新消息', body: '你收到了一条新消息' };
 
-      let payload = {};
-      try {
-        payload = event.data.json();
-      } catch (err) {
-        payload = { title: '新消息', body: event.data.text() };
+      if (event.data) {
+        try {
+          payload = event.data.json();
+        } catch (e) {
+          payload = { title: '新消息提醒', body: event.data.text() };
+        }
       }
 
-      const title = payload.title || '新消息提醒';
+      const title = payload.title || '微信';
       const contactId = payload.contactId || '';
 
       const options = {
@@ -42,14 +44,15 @@ self.addEventListener('push', function (event) {
   );
 });
 
-self.addEventListener('notificationclick', function (event) {
+// 点击通知唤醒 App 并聚焦聊天界面
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/';
   const contactId = event.notification.data?.contactId || '';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (let client of windowClients) {
+      for (const client of windowClients) {
         if (client.url.includes(targetUrl) && 'focus' in client) {
           if (contactId) {
             client.postMessage({ action: 'SWITCH_CHAT', contactId: contactId });

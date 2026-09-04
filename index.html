@@ -1776,7 +1776,7 @@
       const btnEl = document.getElementById('enablePushBtn');
 
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        if (statusEl) statusEl.innerText = '当前浏览器环境不支持推送';
+        if (statusEl) statusEl.innerText = '当前浏览器不支持系统推送';
         return;
       }
 
@@ -1785,7 +1785,7 @@
         await navigator.serviceWorker.ready;
       } catch (e) {
         console.warn("Service Worker 注册失败:", e);
-        if (statusEl) statusEl.innerText = 'Service Worker 注册失败';
+        if (statusEl) statusEl.innerText = 'SW 注册失败';
         return;
       }
 
@@ -1794,7 +1794,7 @@
       if (isManual && Notification.permission !== 'granted') {
         const perm = await Notification.requestPermission();
         if (perm !== 'granted') {
-          if (statusEl) statusEl.innerText = '通知权限未被授予';
+          if (statusEl) statusEl.innerText = '通知权限被拒绝';
           return;
         }
       }
@@ -1813,53 +1813,32 @@
           }
 
           if (subscription && currentUser.name) {
-            // 修复后代码：无论表里有没有唯一约束，均可稳定写入
-            if (sbClient) {
-              try {
-                const subJson = subscription.toJSON();
-                // 1. 先查询是否存在该用户的该设备
-                const { data: existing } = await sbClient
-                  .from('user_subscriptions')
-                  .select('id')
-                  .eq('user_id', currentUser.name)
-                  .eq('endpoint', subscription.endpoint)
-                  .maybeSingle();
+            const subData = subscription.toJSON();
 
-                if (existing && existing.id) {
-                  // 2. 已存在则更新
-                  await sbClient
-                    .from('user_subscriptions')
-                    .update({
-                      subscription: subJson,
-                      updated_at: new Date().toISOString()
-                    })
-                    .eq('id', existing.id);
-                } else {
-                  // 3. 不存在则插入新记录
-                  await sbClient
-                    .from('user_subscriptions')
-                    .insert([{
-                      user_id: currentUser.name,
-                      endpoint: subscription.endpoint,
-                      subscription: subJson,
-                      updated_at: new Date().toISOString()
-                    }]);
-                }
-              } catch (err) {
-                console.error("写入 Supabase user_subscriptions 失败:", err);
-              }
-            }
-            // 必须修改为显式 toJSON()：
-            const subJson = subscription.toJSON();
+            // 1. 同步到 Cloudflare Worker KV（主通道）
             if (PUSH_SERVER_URL) {
-              await fetch(`${PUSH_SERVER_URL}/api/subscribe`, {
+              fetch(`${PUSH_SERVER_URL}/api/subscribe`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   userId: currentUser.name,
-                  subscription: subJson
+                  subscription: subData
                 })
-              }).catch(() => {});
+              }).catch(err => console.warn("Worker 订阅失败:", err));
+            }
+
+            // 2. 同步至 Supabase 数据库（副通道）
+            if (sbClient) {
+              sbClient.from('user_subscriptions').upsert({
+                user_id: currentUser.name,
+                endpoint: subscription.endpoint,
+                subscription: subData,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'user_id,endpoint' })
+              .then(({ error }) => {
+                if (error) console.warn("Supabase 同步跳过:", error.message);
+                else console.log("设备已成功登记到 Supabase 离线列表");
+              });
             }
           }
         } catch (err) {
